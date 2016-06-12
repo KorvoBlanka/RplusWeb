@@ -1,0 +1,51 @@
+% use JSON;
+
+% use Rplus::Model::AccountsExt;
+% use Rplus::Model::AccountsExt::Manager;
+% use Rplus::Model::BillingExt;
+% use Rplus::Model::BillingExt::Manager;
+
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="/assets/bootstrap/3.0.0-wip/css/bootstrap.min.css">
+    <style type="text/css">
+    </style>
+    <script type="application/javascript">
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Номер счета</th>
+            <th>Дата</th>
+            <th>email</th>
+            <th>Сумма</th>
+            <th>Состояние счета</th>
+            <th>Провайдер</th>
+          </tr>
+        </thead>
+        <tbody>
+
+        % my $iter = Rplus::Model::BillingExt::Manager->get_objects_iterator(sort_by => 'id DESC');
+        % while (my $x = $iter->next) {
+          <tr>
+          <td><%= $x->id %></td>
+          <td><%= $x->date %></td>
+          %#<td><%= $x->account_id %></td>
+          <td><%= $x->account->email %></td>
+          <td><%= $x->sum %></td>
+          <td><%= $x->state %></td>
+          <td><%= $x->provider %></td>
+          </tr>
+        % }
+
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

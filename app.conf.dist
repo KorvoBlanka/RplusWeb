@@ -1,0 +1,22 @@
+{
+    default_city_guid => 'aaa-guid-bbb',
+    default_phone_prefix => '1234',
+
+    storage => {
+        path => '/mnt/data/storage/mgmt',
+        url => 'http://storage.dvnic.com/mgmt',
+    },
+
+    title => 'RplusWeb',
+    brand => 'RplusWeb',
+    copyright => 'Rplus/Web Project',
+
+    meta_headers => [],
+    analytics_code => '',
+
+    hypnotoad => {
+        listen => ['http://127.0.0.1:9100'],
+        proxy => 1,
+        pid_file => 'hypnotoad.pid',
+    }
+}

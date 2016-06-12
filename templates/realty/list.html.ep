@@ -1,0 +1,884 @@
+% layout 'default';
+% title ('zaVrus');
+
+% use POSIX qw(ceil);
+
+% content_for header => begin
+<link rel="stylesheet" href="/assets/typeahead.js/0.9.4-dev/css/typeahead.js-bootstrap.css">
+<link rel="stylesheet" href="/assets/jquery-ui/jquery-ui.css">
+<style type="text/css">
+
+  /* Typeahead.js input-sm fix */
+  .tt-hint {
+    height: 30px;
+    padding: 5px 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    border-radius: 3px;
+    color: #c0c0c0;
+  }
+
+  .side-panel {
+    position: fixed; 
+    top: 0px; 
+    width: 320px; 
+    height: 100%; 
+    background-color: rgba(6,33,66,0.95);
+    color: #dadada;
+    overflow: auto; 
+    overflow-y: auto; 
+    z-index: 1001;
+
+    left: -318px;
+    -webkit-transition: all .2s linear;
+    transition: all .2s linear;
+  }
+
+  .side-panel.opened {
+    left: 0px;    
+  }
+
+  .panel-body {
+    padding: 0px;
+  }
+
+  .fav-screen .panel-body {
+    background-color: rgba(0,0,0,0.05);    
+  }
+
+  .fav-screen {
+    /*top: -200px;*/
+    height: 176px;
+  }
+
+  .fav-screen.opened {
+    top: 0px;
+  }
+
+  .panel-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0);
+    z-index: 2;
+  }
+
+  .tile-selected > .panel-overlay {
+    background-color: rgba(0,0,0,0.1);
+  }
+
+  .realty-tile:hover > .panel-overlay {
+    background-color: rgba(0,0,0,0.05);
+  }
+
+  .highlight:hover {
+    background-color: #fff;
+  }
+
+  @media (max-width: 680px) and (orientation: portrait) {
+    .col-ssm-12 {
+      width: 100%;
+      float: left;
+      position: relative;
+      min-height: 1px;
+      padding-right: 15px;
+      padding-left: 15px;    
+    }
+  }
+
+  .slide-prev, .slide-next {
+    display: block;
+    position: absolute;
+
+    z-index: 1000;
+
+    top: 0px;
+    padding: 15px 5px 13px 5px;
+
+    outline: 0;
+    cursor: pointer;
+    text-decoration: none;
+
+    width: 50px;
+    height: 100px;
+
+    background-color: #000;
+    opacity: 0.0;
+
+    text-align: center;
+
+    -webkit-transition: opacity 500ms linear;
+    -moz-transition: opacity 500ms linear;
+    -o-transition: opacity 500ms linear;
+    transition: opacity 500ms linear;
+  }
+
+  .slider_block:hover > .slide-prev, .slider_block:hover > .slide-next {
+    opacity: 0.4;
+  }
+  
+  .slide-prev > span, .slide-next > span {
+    padding-top: 27px;
+  }
+  
+  .slide-next {
+    right: 0px;
+  }
+
+  .fav-slide-prev, .fav-slide-next {
+    width: 50px;
+    height: 100%;
+  }
+
+  .fav-slide-prev > span, .fav-slide-next > span {
+    padding-top: 62px;
+  }
+
+  .del-btn {
+    position: absolute;
+    z-index: 10;
+    right: 0px;
+    top: 0px;
+    width: 22px;
+    height: 22px;
+    padding-left: 4px; 
+    padding-top: 3px;
+    color: #aaa;
+    opacity: 0;
+    cursor: pointer;
+    -webkit-border-radius: 0px;
+    -moz-border-radius: 0px;
+    border-radius: 0px;
+    -webkit-transition: opacity 100ms linear;
+    -moz-transition: opacity 100ms linear;
+    -o-transition: opacity 100ms linear;
+    transition: opacity 100ms linear;
+  }
+
+  .realty-tile-overlay {
+    position: relative;
+    padding-left: 3px; 
+    display: block; 
+    float: left; 
+  }
+
+  .realty-tile-overlay:hover .realty-tile {
+    /*background-color: rgba(0,0,0,0.5);*/
+  }
+
+  .realty-tile-overlay:hover .del-btn {
+    opacity: 1;
+  }
+
+  .del-btn:hover {
+    color: #333;
+  }
+
+  .panel {
+    box-shadow: none;
+    border: 0;
+  }
+
+  .highlight {
+    /*background-color: #fff;*/
+  }
+
+  .highlight:hover {
+    /*background-color: #f1f1f1;*/
+  }
+
+  .panel {
+    background-color: transparent;
+  }
+
+  .text-easy {
+    font-weight: 200;
+    letter-spacing: 1px;
+  }
+
+  .text-easy-ns {
+    font-weight: 200;
+    letter-spacing: 0.5px;
+  }
+
+  .text-small {
+    margin: 0; 
+    font-size: 11px;
+    font-weight: 400;
+    color: #aaa;
+  }
+
+  .text-mdl {
+    margin: 0; 
+    font-size: 14px;
+    font-weight: 200;
+    color: #aaa;
+  }
+
+  .a-val {
+    color: #666;
+    font-weight: 500;
+
+    /*
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+    overflow: hidden;
+    display: inline-block;*/
+  }
+
+  .realty-tile {
+    border-radius: 0;
+    margin-bottom: 0px;
+    cursor: pointer;
+    position: relative;    
+  }
+
+  .panel-body > .sticker-block {
+    width: 100%;
+    position: relative;
+    background-color: rgba(0,0,0,0.05);
+  }
+
+  .sticker-block > .price-sticker {
+    padding: 2px 6px;
+    position: absolute;
+    left: -3px;
+    top: -3px;
+    background-color: #d9534f;
+    color: #eee;
+    z-index: 3;    
+  }
+
+  .tstamp-sticker {
+    padding: 2px 6px;
+    font-size: 11px;
+    position: absolute;
+    right: 0px;
+    bottom: 0px;
+    background-color: #aaa;
+    color: #eee;
+  }
+
+  .icon-close {
+    border-radius: 50%;
+  }
+
+  .icon-close:hover {
+    background-color: #eee;
+  }
+
+  .sbtn {
+    color: #eee;
+    background-color: transparent;
+    border: 1px solid #eee;
+    padding: 4px 8px 4px 8px;
+    margin-top: 20px;
+  }
+
+  .ui-slider {
+    height: 8px;
+    border: 0px;
+  }
+
+  .ui-slider-handle {
+    outline: 0;
+    border-radius: 50% !important;
+    top: -.35em !important;
+  }
+
+  .ui-slider-range {
+    background: #f6931f !important;
+  }
+
+  .js-order {
+    display: inline-block;
+    height: 28px;
+    padding: 0 10px;
+    color: #181818;
+    border: 1px solid transparent;
+    line-height: 28px;
+    text-decoration: none;
+  }
+
+  .js-order:hover {
+    display: inline-block;
+    height: 28px;
+    padding: 0 10px;
+    color: #181818;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    line-height: 28px;
+    text-decoration: none;
+  }
+
+  .js-order.current {
+    display: inline-block;
+    height: 28px;
+    padding: 0 10px;
+    color: #181818;
+    line-height: 28px;
+    border: 1px solid #999999;
+    background: #f4f4f4;
+    border-radius: 4px;
+    text-decoration: none;
+  }
+
+</style>
+% end
+
+% content_for after_bootstrap => begin
+<script type="application/javascript" src="/assets/jquery-ui/jquery-ui.js"></script>
+<script type="application/javascript" src="/assets/typeahead.js/0.9.4-dev/js/typeahead.js"></script>
+<script type="application/javascript" src="/assets/carouFredSel-6.2.1/jquery.carouFredSel-6.2.1.js"></script>
+% end
+
+% content_for javascript => begin
+<script type="application/javascript">
+$(function () {
+
+  function getUrlParameter(sParam)
+  {
+      var sPageURL = window.location.search.substring(1);
+      var sURLVariables = sPageURL.split('&');
+      for (var i = 0; i < sURLVariables.length; i++) 
+      {
+          var sParameterName = sURLVariables[i].split('=');
+          if (sParameterName[0] == sParam) 
+          {
+              return sParameterName[1];
+          }
+      }
+  }
+
+  $('#searchForm').submit(function (e) {
+    e.preventDefault();
+    listRealty(1);
+  });
+
+  $('.search-button').click(function (e) {
+    listRealty(1);
+  });    
+
+  var f = 0;
+  function setRNumber(num) {
+    if (!f) {
+      f = 1;
+      $('.qty').text(num);
+    }
+  }
+
+  function formatPhoneNum(phoneNum) {
+    var defaultPhonePrefix = "4212";
+    if (!phoneNum) return;
+    if (defaultPhonePrefix && phoneNum.indexOf(defaultPhonePrefix) == 0) {
+      return "(" + defaultPhonePrefix + ")" + phoneNum.substring(defaultPhonePrefix.length, phoneNum.length);
+    }
+    return phoneNum.replace(/^(\d{3})(\d{3})(\d{4})$/, "($1)$2$3");
+  }
+
+  // Query completion
+  $('#searchQuery').typeahead({
+    name: 'searchQuery',
+    valueKey: "value",
+    limit: 10,
+    remote: "/api/query/complete?q=%QUERY&limit=10",
+  });
+
+  var _listingRealty = false;
+  function listRealty(page) {
+    var $this = $(this);
+    //var offer_type_code = $('[name="offer_type"]:input').val(),
+    var offer_type_code = 'rent',
+        type_code     = $('[name="type_code"]:input').val(),
+        landmark_id = $('[name="landmark_id"]:input').val(),
+        rooms_count = $('[name="rooms_count"]:input').val(),
+        price_low   = $("#slider-range" ).slider("values", 0),
+        price_high  = $("#slider-range" ).slider("values", 1),
+        q           = $('[name="q"]:input').val()
+    ;
+
+    var sort_by = $('.js-order.current').attr('rel');
+
+    var per_page = 20;
+
+    _listingRealty = true;
+    $.ajax({
+      type: "POST",
+      url: "/api/realty/list",
+      data: {
+        q: q,
+        offer_type_code: offer_type_code,
+        type_code: type_code,
+        rooms_count: rooms_count,
+        landmark_id: landmark_id,
+        price_low: price_low,
+        price_high: price_high,
+        sort_by: sort_by,
+        page: page,
+        per_page: per_page
+      },
+      complete: function () { _listingRealty = false; }
+    })
+      .done(function (data, textStatus, jqXHR) {
+
+        setRNumber(data.count);
+
+        $('.realty-count').text(data.count);
+        $('.realty-count').removeClass('hidden');
+
+        var xhtml = '';
+        var list_width = $('body .container').width();
+        for (var i = 0; i < data.list.length; i++) {
+          var r = data.list[i];
+
+          var type = r.type;
+          var photo;
+
+          var rooms = '?'
+          if (r.rooms_offer_count) {
+            rooms = r.rooms_offer_count;
+            if (r.rooms_count) {
+              rooms += ' из ' + r.rooms_count;
+            }
+          } else {
+            if (r.rooms_count) {
+              rooms = r.rooms_count;
+            }
+          }
+
+          var floors = r.floors || '?';
+          var price = r.price || '?';
+
+          var item_count = 4;
+          if (list_width > 920) {
+            item_count = 4;
+          } else if (list_width > 537) {
+            item_count = 2;
+          } else {
+            item_count = 1;
+          }
+
+          if (i % item_count == 0) {
+            xhtml += '<hr style="width: 100%; margin-bottom: 5px;" class="featurette-divider">';
+          }
+
+          xhtml += '<div class="col-md-3 col-xs-6 col-ssm-12" style="padding: 6px;">';
+          xhtml += '<a href="/show/' + r.id + '" style="text-decoration: none;">';
+          xhtml += '  <div class="panel panel-default panel-sm highlight realty-tile" data-id="' + r.id + '"">';
+          xhtml += '    <div class="panel-overlay"></div>';
+          xhtml += '    <div class="panel-body">';
+          xhtml += '      <div class="sticker-block">';
+          if (r.main_photo_thumbnail) {
+            xhtml += '      <img class="media-object" src=' + r.main_photo_thumbnail + ' style="height: 210px; max-width: 100%;">';
+          } else {
+            xhtml += '      <div class="" style="height: 210px;"></div>';
+          }
+          xhtml += '        <span class="price-sticker text-easy">' + type + '&nbsp;&nbsp;&nbsp;' + price + ' тыс. руб.</span>';
+          xhtml += '        <span class="tstamp-sticker text-easy-ns">' + moment(r.change_date).format("DD.MM.YYYY HH:mm") + '</span>';            
+          xhtml += '      </div>';
+          xhtml += '      <div class="col-sm-12 col-xs-12 " style="padding-left: 0px;">';
+          xhtml += '        <p class="text-small">Комнат: <span class="a-val">' + rooms + '</span> ' + 'Этаж: <span class="a-val">' + floors + '</span></p>';
+          if (r.squares_land) {
+            //xhtml += '        <p style="margin: 0">Участок:</p>';
+          }
+          xhtml += '        <p class="text-small">Улица: <span class="text-small a-val">' + r.street + '</span></p>';
+          xhtml += '        <p class="text-small">Район: <span class="text-small a-val">' + r.area + '</span></p>';
+          xhtml += '      </div>';
+          xhtml += '    </div>';
+          xhtml += '  </div>';
+          xhtml += '</a>';
+          xhtml += '</div>';
+        }
+        if (page == 1) {
+          $('.tile-container').html(xhtml);
+        } else {
+          $('.tile-container').append(xhtml);
+        }
+        $('.tile-container').data('page', page);
+      })
+    ;
+  }
+
+  function listFav(page) {
+    var fav = getFavList();
+    if (Object.keys(fav).length > 0) {
+      var xhtml = '';
+      xhtml += '<div id="fav-carousel">';
+
+      var list_width = $('body .container').width();
+      var item_width = 270;
+      var item_count = 4;
+      if (list_width > 1000) {
+        item_count = 4;
+      } else if (list_width > 750) {
+        item_count = 3;
+      } else if (list_width > 500) {
+        item_count = 2;
+      } else {
+        item_count = 1.2;
+      }
+      item_width = (list_width / item_count);
+
+      for (var key in fav) {
+        var r = fav[key];
+
+        var type = r.type;
+        var photo = r.photo || '/img/nophoto_mini.png';
+        var rooms = r.rooms_count || '?';
+        var floors = r.floors || '?';
+        var price = r.price || '?';
+
+        xhtml += '<div class="realty-tile-overlay" style="width: ' + item_width + 'px;">';
+        xhtml += ' <a class="del-btn unfav-btn" data-id="' + r.id + '" href="#"><span class="glyphicon glyphicon-remove"></span></a>';
+        xhtml += ' <a href="/show/' + r.id + '" style="text-decoration: none !important;">';
+        xhtml += '  <div class="panel panel-default panel-sm highlight realty-tile" data-id="' + r.id + '"" style="border-radius: 0; margin-bottom: 0px; cursor: pointer; position: relative;">';
+        xhtml += '    <div class="panel-overlay"></div>';          
+        xhtml += '    <div class="panel-body">';
+        xhtml += '      <div class="row">';
+        xhtml += '        <div class="col-sm-5 col-xs-5" style="width: 100px;">';
+        xhtml += '           <img class="media-object" src=' + photo + ' style="width: 100px; height: 100px;">';  // photo
+        xhtml += '        </div>';
+        xhtml += '        <div class="col-sm-7 col-xs-7" style="padding-left: 20px;">';
+        xhtml += '          <h4>' + type + '</h4>';
+        xhtml += '          <p class="text-mdl">Комнат: <span class="text-md a-val">' + rooms + '</span></p>';
+        xhtml += '          <p class="text-mdl">Этаж: <span class="text-md a-val">' + floors + '</span></p>';
+        if (r.squares_land) {
+          xhtml += '        <strong>Участок:</strong> <br>';
+        }
+        xhtml += '        </div>';
+        xhtml += '      </div>';
+        xhtml += '      <div class="row">';
+        xhtml += '        <div class="" style="padding: 5px 0px 5px 20px; position: relative;">';
+        xhtml += '          <p class="text-small">Улица: <span class="text-small a-val">' + r.street + '</span></p>';
+        xhtml += '          <p class="text-small">Район: <span class="text-small a-val">' + r.area + '</span></p>';
+        xhtml += '          <span href="" class="text-danger realty-price" style=""><strong>' + price + ' тыс. руб.</strong></span>';
+        xhtml += '          <span class="text-small text-easy-ns" style="position: absolute; right: 25px; bottom: 8px;">' + moment(r.change_date).format("DD.MM.YYYY HH:mm") + '</span>';
+        xhtml += '        </div>';
+        xhtml += '      </div>';
+        xhtml += '    </div>';
+        xhtml += '  </div>';
+        xhtml += ' </a>';
+        xhtml += '</div>';
+        
+      }
+      xhtml += '</div>';
+      xhtml += '<a class="slide-prev fav-slide-prev icon-left" style="color: white;" href="#"></a>';
+      xhtml += '<a class="slide-next fav-slide-next icon-right" style="color: white;" href="#"></a>';
+      //xhtml += '<hr style="width: 100%; margin-bottom: 5px;" class="featurette-divider">';
+      $('.fav-screen').html(xhtml);
+
+      $('#fav-carousel').carouFredSel({
+          items: {
+            visible: item_count,
+            height: "variable",
+            width: "variable",
+          },
+          circular: true,
+          direction: "left",
+          responsive: false,
+          width: '100%',
+          align: "center",
+          scroll : {
+              play: false,
+              items: 1,
+              easing: "linear",
+          },
+          swipe: {
+            onTouch: true,
+            onMouse: true,
+          },
+          next: {
+            button: $(".fav-slide-next"),
+          },
+          prev: {
+            button: $(".fav-slide-prev"),
+          },
+      });
+      setTimeout(function() {
+        $(window).resize();
+      }, 200);
+    } else {
+      xhtml = '<div id="fav-carousel" style="height: 180px; width: 100%; text-align: center; vertical-align: middle; line-height: 180px; font-size: 24px; color: #dadada;">';
+      xhtml += 'Список пуст';
+      xhtml += '</div>';
+      $('.fav-screen').html(xhtml);
+    }
+  }
+
+  function getFavList() {
+    var fav_str = localStorage.getItem('fav_list');
+    var fav;
+    if (fav_str) {
+      fav = JSON.parse(fav_str);
+    } else {
+      fav = {};
+    }
+    return fav;
+  }
+
+  function setFavList(fav_list) {
+    localStorage.setItem('fav_list', JSON.stringify(fav_list));
+  }
+
+  function fav(id) {
+    var fav = getFavList();
+    fav[id] = obj;
+    setFavList(fav);
+  }
+
+  function unFav(id) {
+    var fav = getFavList();
+    if (fav[id]) {
+      delete fav[id];
+      setFavList(fav);
+    }
+  }
+
+  function setFavBadge() {
+    var fav_str = localStorage.getItem('fav_list');
+    var fav;
+    if (fav_str) {
+      fav = JSON.parse(fav_str);
+      $('#fav-count-badge').text(Object.keys(fav).length);
+      if (Object.keys(fav).length == 0) {
+        $('#fav-count-badge').addClass('hidden');
+      } else {
+        $('#fav-count-badge').removeClass('hidden');
+      }
+    }
+  }
+
+  var scroll_pos = 0;
+  function openFavs() {
+    listFav();
+    scroll_pos = $(window).scrollTop();
+    $('.fav-list-switch').addClass('active');
+    $('.fav-screen').removeClass('hidden');
+    $("html, body").animate({
+      scrollTop: 0,
+    }, 800);
+  }
+
+  function closeFavs() {
+    $('.fav-list-switch').removeClass('active');
+    $('.fav-screen').addClass('hidden');
+    $("html, body").animate({
+      scrollTop: scroll_pos,
+    }, 800);
+  }
+
+  $(document).on('click', '.unfav-btn', function() {
+    var id = $(this).data('id');
+    unFav(id);
+    setFavBadge();
+    listFav();
+  });
+
+  $('.side-panel-switch-st').click(function() {
+    $('.side-panel-switch').toggleClass('active');
+    $('.side-panel').toggleClass('opened');
+  });
+
+  $('.side-panel-switch').click(function() {
+    $('.side-panel-switch').toggleClass('active');
+    $('.side-panel').toggleClass('opened');
+  });
+
+  $('.fav-list-switch').click(function() {
+    if ($(this).hasClass('active')) {
+      closeFavs();
+    } else {
+      openFavs();
+    }
+  });
+
+  $('.js-order').click(function() {
+    $('.js-order.current').removeClass('current');
+    $(this).addClass('current');
+    listRealty(1);
+  });
+
+  $('#backToTop').click(function (e) { 
+    $("html, body").animate({
+      scrollTop: 0,
+    }, 800);
+  });
+
+  $(window).scroll(function() {
+    if (_listingRealty) return;
+    if ($('.list-screen').hasClass('hidden')) return;
+    if($(window).scrollTop() < 100) {
+      $('#backToTop').addClass('hidden');
+    } else {
+      $('#backToTop').removeClass('hidden');
+    }
+    if($(window).scrollTop() + $(window).height() >= $(document).height() || (window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
+      var page = $('.tile-container').data('page');
+      listRealty(++page);
+    }
+  });
+
+  $( "#slider-range" ).slider({
+    range: true,
+    min: 0,
+    max: 1000,
+    values: [ 0, 1000 ],
+    slide: function( event, ui ) {
+      var min = ui.values[0] == 0 ? '0' : ui.values[0] + ' 000';
+      $("#amount").val(min + " - " + ui.values[1] + ' 000 ₽');
+    }
+  });
+  var min = $("#slider-range" ).slider("values", 0) == 0 ? '0' : $("#slider-range" ).slider("values", 0) + ' 000';
+  $( "#amount" ).val(min + " - " + $("#slider-range").slider("values", 1) + ' 000 ₽');
+
+  $.ajax({
+    type: "POST",
+    url: "/api/realty/get_max_price",
+    data: {},
+    complete: function () {}
+  })
+    .done(function (data, textStatus, jqXHR) {
+      if (data.result == 'ok') {
+        $("#slider-range").slider("option", "max", data.max_price);
+        $("#slider-range").slider("option", "values", [0, data.max_price]);
+        var min = $("#slider-range" ).slider("values", 0) == 0 ? '0' : $("#slider-range" ).slider("values", 0) + ' 000';
+        $( "#amount" ).val(min + " - " + $("#slider-range").slider("values", 1) + ' 000 ₽');
+      }
+    });
+
+  listRealty(1);
+  setFavBadge();
+
+  if(getUrlParameter('fav') == '1') {
+    openFavs();
+  }
+  if(getUrlParameter('search') == '1') {
+    $('.side-panel-switch').toggleClass('active');
+    $('.side-panel').toggleClass('opened');
+  }
+
+  if (document.referrer.indexOf("zavrus") == -1) {
+    var str = localStorage.getItem('enlighted')
+    var e = 0;
+    if (str) {
+      e = parseInt(localStorage.getItem('enlighted'));
+    }
+    console.log(e);
+    if (e < 1) {
+      localStorage.setItem('enlighted', e + 1);
+      window.location = '/info';
+    }
+  }
+
+});
+</script>
+% end
+
+<a id="backToTop" class="hidden icon-up" style="cursor: pointer; position: fixed; bottom: 20px; right: 20px; height: 60px; width: 60px; background-color: #dadada; z-index: 1002;"></a>
+
+<div class="side-panel">
+  <div style="height: 25px;">
+  </div>
+
+  <div class="col-md-12">
+    %= text_field 'q' => '', class => "form-control input-sm", form => "searchForm", id => "searchQuery", placeholder => "Введите поисковый запрос", "x-webkit-speech" => "x-webkit-speech"
+  </div>
+
+  <div class="wrapper" style="margin: 20px;">
+    <form role="form" id="searchForm" style="text-align: center;">
+      <div class="form-group">
+        <div class="styled-select transparent">
+          <select class="form-control input-sm" name="offer_type">
+            <option value="rent_short">Долгосрочная аренда</option>
+            <option value="rent_long">Краткосрочная аренда</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="styled-select transparent">
+          <select class="form-control input-sm" name="type_code">
+            <option value="">Тип недвижимости...</option>
+            <option value="room">Комната</option>
+            <option value="apartment">Квартира</option>
+            <option value="apartment_small">Малосемейка</option>
+            <option value="townhouse">Таунхаус</option>
+            <option value="house">Дом</option>
+            <option value="cottage">Коттедж</option>
+            <option value="commersial">Офис</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="styled-select transparent">
+        % # TODO: Use cache
+        % my $landmark_optgroups;
+        % unless ($landmark_optgroups) {
+        %   $landmark_optgroups = [];
+        %   my $landmarks = db->dbh->selectall_arrayref(q{SELECT id, name, COALESCE(NULLIF(metadata->>'group',''), type) AS group_name FROM landmarks WHERE type IN ('landmark', 'sublandmark') AND delete_date IS NULL ORDER BY group_name, COALESCE(NULLIF(metadata->>'pos',''), '999')::integer, name}, {Slice => {}});
+        %   my %groups;
+        %   for (@$landmarks) {
+        %     my $x = $_->{group_name} eq 'landmark' ? 'Район' : ($_->{group_name} eq 'sublandmark' ? 'Подрайон' : $_->{group_name});
+        %     unless (exists $groups{$x}) {
+        %       $groups{$x} = scalar keys %groups;
+        %       $landmark_optgroups->[$groups{$x}] = {$x => []};
+        %     }
+        %     push @{$landmark_optgroups->[$groups{$x}]->{$x}}, [$_->{name}, $_->{id}];
+        %   }
+        % }
+        %= select_field 'landmark_id' => [['Расположение...' => ''], @$landmark_optgroups], class => 'form-control input-sm'
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="styled-select transparent">
+        %= select_field 'rooms_count' => [['Кол-во комнат...' => ''], (map { [$_ => $_] } (1..4)), ['5 и более' => '5']], id => 'selectRoomsCount', class => 'form-control  input-sm'
+        </div>
+      </div>
+      <div class="form-group" style="text-align: left;">
+        <p style="text-indent: 12px;">
+          <label for="amount">Цена:</label>
+          <input type="text" id="amount" readonly style="border:0; color:#f6931f; background-color: transparent;">
+        </p>
+        <div id="slider-range"></div>
+        <div class="hidden">
+          <div class="input-group pull-left" style="width: 45%; display: inline-table;">
+            <span class="input-group-addon">от</span>
+            %= number_field 'price_low', class => 'form-control input-sm', min => '0'
+          </div>
+          <div class="input-group pull-right" style="width: 45%; display: inline-table;">
+            <span class="input-group-addon">до</span>
+            %= number_field 'price_high', class => 'form-control input-sm', min => '0'
+          </div>
+          <div class="clearfix"></div>
+        </div>
+      </div>
+      <a href="#" style="width: 100px; height: 100px; display: block; margin: 0 auto;" class="icon-search search-button side-panel-switch-st"></a>
+      <button type="submit" class="sbtn side-panel-switch hidden">Найти</button>
+    </form>
+  </div>
+</div>
+
+<div class="fav-screen container slider_block hidden" style="position: relative; margin-top: 20px; margin-bottom: 35px;">
+</div>
+
+<div class="list-screen container" style="margin-top: 15px;">
+  <div class="col-md-12">
+    <div class="rooms-count hidden-xs" style="float: left;">
+      <span class="qty numb" style="font-size: 36px; font-weight: 100; letter-spacing: 1px;"></span>
+      <span class="descript" style="float: right; margin-top: -10px; margin-left: 4px;">проверенных<br>объявлений</span>
+    </div>
+    <ul style="overflow: hidden; list-style: none; margin: 0; padding: 0; border: 0; font: inherit; font-size: 100%; vertical-align: baseline; float: right; margin-top: 2px;">
+      <li style="height: 30px; margin-right: 17px; float: left; font-size: 13px; line-height: 30px;">
+        <span class="realty-count hidden">0</span> объявлений отсортированы по
+      </li>
+      <li style="height: 30px; margin-right: 17px; float: left; font-size: 13px; line-height: 30px;">
+        <a class="js-order current" href="#" rel="date">по дате добавления</a>
+      </li>
+      <li style="height: 30px; /*margin-right: 17px;*/ float: left; font-size: 13px; line-height: 30px;">
+        <a class="js-order" href="#" rel="price">по цене</a>
+      </li>
+    </ul>  
+    <div class="tile-container">
+    </div>
+  </div>
+</div>

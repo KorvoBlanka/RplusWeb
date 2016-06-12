@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ZaVrus, аренда квартир, комнат, домов без риэлторов">
+    <meta name="title" content="ZaVrus - твой идеальный вариант">
+    <meta name="keywords" content="хабаровск,аренда,квартир,без,посредников,риэлтор,презент,авито,из рук в руки,фарпост,агентства,агенства,частная,сдать,снять,в,аренду,частное,лицо,собственник,собственик,дом,частный,коттедж,комната,малосемейка,общежитие,однокомнатная,двухкомнатная,трехкомнатная,длительный,срок,короткий,частного,собственник,посуточно,стоимость,договор,бланк,хабаровск,скачать,образец,на,цена,стоимость,как,сдаю,снимаю,сделки,сделка,сайт,комиссий,комисий,предоплата,месяц,праздники,сутки,рынок,найти,объявления,недорого,час,хочу,съем,человек,хозяин,сервис,служба" />
+    <meta name="robots" content="index,follow" />
+    <meta name="author" content="Borisenko Aleksandr (korvo.blanka[at]gmail.com)">
+    <meta name="w1-verification" content="190508019929" />
+    <meta name='yandex-verification' content='77cd411e4269a44d' />
+    <meta name="google-site-verification" content="bOQoGFwqTdmjN_U-K6xU-Bu1iTMK4xnApMUFeVDR3bc" />
+    % if (config->{meta_headers} && ref(config->{meta_headers}) eq 'ARRAY') {
+    %== join "\n", @{config->{meta_headers}}
+    % }
+
+    <title><%= &title %></title>
+
+    % my $bootstrap_ver = '3.0.0-wip';
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="<%= url_for qq{/assets/bootstrap/$bootstrap_ver/css/bootstrap.min.css} %>">
+
+    <style type="text/css">
+      body {
+        padding-top: 65px;
+        background-color: #f4f4f4;
+        background-image: url("/img/background.png");
+        background-repeat: repeat;
+        line-height: 160%;        
+      }
+
+      body:after{
+        display:none;
+        content: url(/img/btn/search_a.svg) url(/img/btn/star_a.svg) url(/img/btn/info_a.svg) url(/img/btn/lock_a.svg);
+      }
+
+	  .bootbox-body {
+		margin-left: 10px;
+	  }
+	  
+      .nav {
+        list-style: none;
+        text-align: center;
+      }
+
+      @media (orientation: portrait) {
+        .nav {
+          text-align: left;
+          margin-left: -8px;
+        }        
+      }
+
+      .nav li {
+        position: relative;
+        display: inline-block;
+      }
+
+      .nav a {
+        padding: 0px !important;
+        display: block;
+        background-color: rgba(6,33,66,1);
+        /*border: 2px solid #fff;*/
+        border-radius: 50%;
+
+        margin: 6px;
+        width: 50px;
+        height: 50px;
+        position: relative;
+        top: 1px;
+
+      }
+
+      .nav a:hover {
+        background-color: rgba(6,33,66,1) !important;
+      }
+
+      .nav a.active:hover {
+        background-color: #fff !important;
+      }
+
+      .nav a.active:focus {
+        background-color: #fff !important;
+      }
+
+      .nav a:focus {
+        background-color: rgba(6,33,66,1) !important;
+      }
+
+      .nav a.active {
+        color: #000;
+        background-color: #efefef;
+      }
+
+      .icon-search {
+        background: url(/img/btn/search.svg) no-repeat center;
+        background-size: 48px 48px;
+      }
+
+      .icon-search.active {
+        /*background: url(img/btn/search_a.svg) no-repeat center;
+        background-size: 48px 48px;*/
+      }
+
+      .icon-star {
+        background: url(/img/btn/star.svg) no-repeat center;
+        background-size: 48px 48px;
+      }
+
+      .icon-star.active {
+        /*background: url(img/btn/star_a.svg) no-repeat center;
+        background-size: 48px 48px;*/
+      }
+
+      .icon-info {
+        background: url(/img/btn/info.svg) no-repeat center;
+        background-size: 48px 48px;
+      }
+
+      .icon-info.active {
+        /*background: url(img/btn/info_a.svg) no-repeat center;
+        background-size: 48px 48px;*/
+      }
+
+      .icon-lock {
+        background: url(/img/btn/lock_a.svg) no-repeat center;
+        background-size: 48px 48px;
+      }
+
+      .icon-lock.closed {
+        background: url(/img/btn/lock.svg) no-repeat center;
+        background-size: 48px 48px;
+      }
+
+      .icon-add {
+        background: url(/img/btn/add.svg) no-repeat center;
+        background-size: 48px 48px;
+      }
+
+      .icon-close {
+        background: url(/img/btn/test_btn_close.png) no-repeat center;
+        background-size: 48px 48px;
+      }
+
+      .icon-left {
+        background: url(/img/btn/left.svg) no-repeat center;
+        background-size: 48px 48px;
+      }
+
+      .icon-right {
+        background: url(/img/btn/right.svg) no-repeat center;
+        background-size: 48px 48px;
+      }
+
+      .icon-up {
+        background: url(/img/btn/up.svg) no-repeat center;
+        background-size: 48px 48px;
+      }
+
+      .screen-container:after {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        font-size: 18px;
+        font-weight: 400;
+        color: #fff;
+        text-transform: uppercase;
+        content: "Вход";
+        font-weight: 100;
+        letter-spacing: 2px;        
+      }
+
+      .unlock-screen {
+        border-radius: 4px; 
+        position: fixed; 
+        height: 250px; 
+        width: 360px; 
+        top: 50%; 
+        left: 50%; 
+        margin-top: -125px; 
+        margin-left: -180px; 
+        background-color: rgba(6,33,66,0.9); 
+        z-index: 1010;
+      }
+
+      @media (orientation: portrait) {
+        .unlock-screen {
+          width: 310px;
+          margin-left: -155px;
+        }
+      }
+
+      .get-key-screen {
+        border-radius: 4px; 
+        position: fixed; 
+        width: 360px; 
+        top: 50%; 
+        left: 50%; 
+        margin-top: -85px; 
+        margin-left: -180px; 
+        padding-bottom: 10px;
+        background-color: rgba(6,33,66,0.9); 
+        z-index: 1010;
+        font-size: 16px;
+      }
+
+      .get-key-screen-container:after {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        font-size: 18px;
+        font-weight: 400;
+        color: #fff;
+        text-transform: uppercase;
+        content: "Получение ключа";
+        font-weight: 200;
+        letter-spacing: 1px;
+      }
+
+      .close {
+        text-shadow: none; 
+        opacity: 1;
+        color: #dadada; 
+        margin-right: 12px;
+        margin-top: 6px;
+      }
+
+      .close:hover, .close:focus {
+        color: #fff;
+        opacity: 1;
+      }
+
+      .quick-notifier {
+        position: absolute;
+        top: 42px;
+        right: 2px;
+        background-color: rgb(255, 41, 0);
+        z-index: 1;
+        font-weight: 400;
+      }
+
+      .styled-select {
+         background: url(/img/btn/select_btn.png) no-repeat -12px 0;
+         height: 29px;
+         overflow: hidden;
+         width: 240px;
+      }
+
+      .styled-select select {
+         background: transparent;
+         border: none;
+         font-size: 14px;
+         height: 29px;
+         padding: 5px; /* If you add too much padding here, the options won't show in IE */
+         width: 268px;
+         padding: 0 0 0 15px;
+         text-indent: 15px;
+      }
+
+      .styled-select select option {
+        color: #333;
+        background-color: #fff;
+      }
+
+      .styled-select select optgroup {
+        font-size: 13px;
+        color: #333;
+        background-color: #eee;
+      }
+
+      .styled-select.slate {
+         background: url(/img/btn/select_btn.png) no-repeat right center;
+         height: 34px;
+         width: 240px;
+      }
+
+      .styled-select.slate select {
+         border: 1px solid #ccc;
+         font-size: 16px;
+         height: 34px;
+         width: 268px;
+      }
+
+      /* -------------------- Rounded Corners */
+      .rounded {
+         -webkit-border-radius: 20px;
+         -moz-border-radius: 20px;
+         border-radius: 20px;
+      }
+
+      .semi-square {
+         -webkit-border-radius: 5px;
+         -moz-border-radius: 5px;
+         border-radius: 5px;
+      }
+
+      /* -------------------- Colors: Background */
+      .slate   { background-color: #ddd; }
+      .green   { background-color: #779126; }
+      .blue    { background-color: #3b8ec2; }
+      .yellow  { background-color: #eec111; }
+      .black   { background-color: #000; }
+      .transparent   { background-color: transparent; }
+
+      /* -------------------- Colors: Text */
+      .slate select   { color: #000; }
+      .green select   { color: #fff; }
+      .blue select    { color: #fff; }
+      .yellow select  { color: #000; }
+      .black select   { color: #fff; }
+      .transparent select  { color: #eee; }
+
+      /* -------------------- Select Box Styles: danielneumann.com Method */
+      /* -------------------- Source: http://danielneumann.com/blog/how-to-style-dropdown-with-css-only/ */
+      #mainselection select {
+         border: 0;
+         color: #EEE;
+         background: transparent;
+         font-size: 20px;
+         font-weight: bold;
+         padding: 2px 10px;
+         width: 378px;
+         *width: 350px;
+         *background: #58B14C;
+         -webkit-appearance: none;
+      }
+
+      #mainselection {
+         overflow:hidden;
+         width:350px;
+         -moz-border-radius: 9px 9px 9px 9px;
+         -webkit-border-radius: 9px 9px 9px 9px;
+         border-radius: 9px 9px 9px 9px;
+         box-shadow: 1px 1px 11px #330033;
+         background: #58B14C url("/img/btn/select_btn.png") no-repeat scroll 319px center;
+      }
+
+
+      /* -------------------- Select Box Styles: stackoverflow.com Method */
+      /* -------------------- Source: http://stackoverflow.com/a/5809186 */
+      select#soflow, select#soflow-color {
+         -webkit-appearance: button;
+         -webkit-border-radius: 2px;
+         -webkit-box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+         -webkit-padding-end: 20px;
+         -webkit-padding-start: 2px;
+         -webkit-user-select: none;
+         background-image: url(/img/btn/select_btn.png), -webkit-linear-gradient(#FAFAFA, #F4F4F4 40%, #E5E5E5);
+         background-position: 97% center;
+         background-repeat: no-repeat;
+         border: 1px solid #AAA;
+         color: #555;
+         font-size: inherit;
+         margin: 20px;
+         overflow: hidden;
+         padding: 5px 10px;
+         text-overflow: ellipsis;
+         white-space: nowrap;
+         width: 300px;
+      }
+
+      select#soflow-color {
+         color: #fff;
+         background-image: url(/img/btn/select_btn.png), -webkit-linear-gradient(#779126, #779126 40%, #779126);
+         background-color: #779126;
+         -webkit-border-radius: 20px;
+         -moz-border-radius: 20px;
+         border-radius: 20px;
+         padding-left: 15px;
+      }
+
+      .zavrus-logo {
+        position: absolute;
+        top: 18px;
+        float: left;
+        font-size: 34px;
+        color: #d9d9d9;
+        font-weight: 100;
+        letter-spacing: 1px;
+        z-index: 1010;
+        text-decoration: none !important;
+      }
+
+      .zavrus-logo:hover, .zavrus-logo:active {
+        color: #919191;
+      }
+
+      label {
+        color: #dadada;
+        font-weight: 200;
+        letter-spacing: 0.4px;
+      }
+
+      button {
+        outline: none;
+      }
+
+      .btn {
+        border-radius: 0px;
+        background-color: transparent;
+        color: #dadada;
+      }
+
+      .ajax-indicator {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        margin-top: -16px;
+        margin-left: -16px;
+        z-index: 10000;
+      }
+
+      .modal-content {
+        border-radius: 0px;
+      }
+
+      .modal-body {
+        padding: 0 0 !important;
+      }
+
+    </style>
+
+    <%= content_for 'header' %>
+  </head>
+  <body>
+
+    <form id="WalletonePaymentForm" target="_newtab" method="post" action="https://www.walletone.com/checkout/default.aspx" accept-charset="UTF-8">
+      <input type="hidden" name="WMI_MERCHANT_ID" value="112664092580"/>
+      <input type="hidden" name="WMI_PAYMENT_AMOUNT" value=""/>
+      <input type="hidden" name="WMI_PAYMENT_NO" value=""/>
+      <input type="hidden" name="WMI_CURRENCY_ID" value="643"/>
+      <input type="hidden" name="WMI_DESCRIPTION" value="Оплата ключа доступа zavrus.com"/>
+      <input type="hidden" name="WMI_SUCCESS_URL" value=""/>
+      <input type="hidden" name="WMI_FAIL_URL" value=""/>
+      <input type="hidden" name="WMI_SIGNATURE" value=""/>
+    </form>
+
+    <form id="RoboPaymentForm" target="_newtab" method="post" action="http://test.robokassa.ru/Index.aspx" accept-charset="UTF-8">
+      <input type="hidden" name="MrchLogin" value="zavrus" />
+      <input type="hidden" name="InvId" value="" />
+      <input type="hidden" name="Desc" value="Оплата ключа доступа zavrus.com" />
+      <input type="hidden" name="SignatureValue" value="" />
+      <input type="hidden" name="OutSum" value="">
+    </form>
+
+    <div class="unlock-screen hidden">
+      <button type="button" class="close"><span aria-hidden="true">&times;</span></button>
+      <div class="screen-container" style="padding: 45px 15px 15px;">
+        <form role="form" id="UnlockForm" style="color: #fff">
+          <div class="form-group">
+            <label for="InputEmail_u" style="color: #dadada;">Email:</label>
+            <input type="email" class="form-control" id="InputEmail_u" placeholder="введите ваш e-mail" style="opacity: 0.8;">
+          </div>
+          <div class="form-group">
+            <label for="InputKey" style="color: #dadada;">Ключ:</label>
+            <input type="text" class="form-control" id="InputKey_u" placeholder="введите ключ" style="opacity: 0.8;">
+          </div>
+          <a href="#" class="pull-left" id="userReg" style="color: #fff; font-size: 16px; font-weight: 100; letter-spacing: 1px; text-decoration: none;">Нет ключа?</a>
+          <span class="screen-message pull-left text-danger hidden" style="position: absolute; left: 15px; top: 215px;"></span>
+          <button class="btn btn-default pull-right">Войти</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="get-key-screen email-screen hidden">
+      <button type="button" class="close"><span aria-hidden="true">&times;</span></button>
+      <div class="get-key-screen-container" style="padding: 45px 15px 15px;">
+        <form role="form" id="emailForm" style="color: #fff">
+          <div class="form-group">
+            <label for="InputEmail" style="color: #dadada;">Email:</label>
+            <input type="email" class="form-control" id="InputEmail" placeholder="введите ваш e-mail" style="opacity: 0.8;">
+          </div>
+          <span class="screen-message pull-left text-danger hidden"></span>
+          <button class="btn btn-default pull-right">Далее</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="get-key-screen code-screen hidden">
+      <button type="button" class="close"><span aria-hidden="true">&times;</span></button>
+      <div class="get-key-screen-container" style="padding: 45px 15px 15px;">
+        <form role="form" id="codeForm" style="color: #fff">
+          <div class="form-group">
+            <label for="InputCode" style="color: #dadada;">Код проверки, полученный по e-mail:</label>
+            <input type="text" class="form-control" id="InputCode" placeholder="введите проверочный код" style="opacity: 0.8;">
+          </div>
+          <span class="screen-message pull-left text-danger hidden"></span>
+          <button class="btn btn-default pull-right">Далее</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="get-key-screen key-pay-screen hidden">
+      <button type="button" class="close"><span aria-hidden="true">&times;</span></button>
+      <div class="get-key-screen-container" style="padding: 45px 15px 15px;">
+        <form role="form" id="keyPayForm" style="color: #fff">
+          <div class="form-group">
+            <label for="InputPaymentSystem" style="color: #dadada;">Выберите платежную систему. Стоимость ключа - 99 рублей. Ключ будет отправлен на указанный вами e-mail:</label>
+            <div class="radio">
+              <label>
+                <input type="radio" name="optionPaymentSystem" id="optionsPaymentSystem1" value="robokassa" disabled>
+                &nbsp;Робокасса
+              </label>
+            </div>
+            <div class="radio">
+              <label>
+                <input type="radio" name="optionPaymentSystem" id="optionsPaymentSystem2" value="walletone" checked>
+                &nbsp;Единый кошелек
+              </label>
+            </div>
+          </div>
+          <span class="screen-message pull-left text-danger hidden"></span>
+          <button class="btn btn-default pull-right">Далее</button>
+        </form>
+      </div>
+    </div>    
+
+    <div class="get-key-screen key-screen hidden">
+      <button type="button" class="close"><span aria-hidden="true">&times;</span></button>
+      <div class="get-key-screen-container" style="padding: 45px 15px 15px;">
+        <form role="form" id="keyForm" style="color: #fff">
+          <div class="form-group">
+            <label for="InputKey" style="color: #dadada;">Введите ключ, полученны по e-mail:</label>
+            <input type="text" class="form-control" id="InputKey" placeholder="введите ключ" style="opacity: 0.8;">
+          </div>
+          <span class="screen-message pull-left text-danger hidden"></span>
+          <button class="btn btn-default pull-right">Далее</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- custom Navbar -->
+    <div class="sheader" style="position: fixed; top: 0px; left: 0px; width: 100%; height: 64px; background-color: #062141; border-bottom: 0px solid #999; z-index: 1000;">
+      <div class="container">
+        <!--<span class="visible-md visible-lg" style="position: absolute; float: left; font-size: 28px; color: #fff;">Недвижимость и <span class="text-danger">цены</span></span>-->
+        <a href="/" class="visible visible-md visible-lg zavrus-logo">za<span style="color: #b60000; font-style: italic; font-weight: 400;">V</span>rus.com</a>
+        <ul class="nav" style="position: relative;" >
+          % if (current_route eq '') {
+            <li><a href="#" class="icon-search side-panel-switch"></a></li> 
+            <li><span id="fav-count-badge" class="badge badge-default quick-notifier hidden"></span><a href="#" class="icon-star fav-list-switch"></a></li> 
+          % } else {
+            <li><a href="/?search=1" class="icon-search"></a></li> 
+            <li><span id="fav-count-badge" class="badge badge-default quick-notifier hidden"></span><a href="/?fav=1" class="icon-star"></a></li> 
+          % }
+          % if (current_route eq 'add') {
+            <li><a href="/" class="icon-add hidden-xs active"></a></li> 
+          % } else {
+            <li><a href="/add" class="icon-add hidden-xs"></a></li> 
+          % }
+          % if (current_route eq 'info') {
+            <li><a href="/" class="icon-info active"></a></li> 
+          % } else {
+            <li><a href="/info" class="icon-info"></a></li> 
+          % }
+          <li style="position: absolute; right: 0px;"><a href="#" class="icon-lock unlock-screen-opener"></a></li> 
+        </ul> 
+      </div>
+    </div>
+
+    <div class="ajax-indicator hidden">
+      <img style="width: 32px;" src="/img/ajax_loader_gray_32.gif">
+    </div>
+
+
+    <%= content %>
+    <!-- Modal Definitions -->
+    <%= content_for 'modals' %>
+
+    <!-- JavaScript -->
+    <script type="application/javascript" src="<%= url_for q{/assets/jquery/2.0.3/jquery-2.0.3.min.js} %>"></script>
+    <%= content_for 'before_bootstrap' %>
+    <!-- Bootstrap -->
+    <script type="application/javascript" src="<%= url_for qq{/assets/bootstrap/$bootstrap_ver/js/bootstrap.min.js} %>"></script>
+    <script type="application/javascript" src="/assets/moment-with-locales.min.js"></script>
+    <script src="/assets/bootbox.min.js"></script>
+    <!-- MomentJS -->
+    <!--script type="application/javascript" src="<%= url_for q{/assets/moment/2.2.1/moment.min.js} %>"></script-->
+    <!-- HolderJS -->
+    <!--script type="application/javascript" src="<%= url_for q{/assets/holder/2.1.0/holder.min.js} %>"></script-->
+    <%= content_for 'after_bootstrap' %>
+
+    <%= content_for 'javascript' %>
+
+    <script type="application/javascript">
+      var LOCKED = 1;
+      var EMAIL = '';
+
+      moment.locale('ru');
+
+      $(document)
+        .ajaxStart(function () {
+          $('.disable-on-ajax').addClass('disabled'); 
+          $('.ajax-indicator').removeClass('hidden');
+        })
+        .ajaxStop(function () {
+          $('.disable-on-ajax').removeClass('disabled'); 
+          $('.ajax-indicator').addClass('hidden');
+        })
+      ;
+
+      $(function () {
+        $(document).on('click', 'a[href="#"]', function (event) { event.preventDefault(); });
+      });
+
+      $(function () {
+        $.ajax({
+          type: "POST",
+          url: "/api/user/check_session",
+          data: {},
+        })
+        .done(function (data, textStatus, jqXHR) {
+          if (data.result == 'login') {
+            LOCKED = 0;
+            EMAIL = data.email;
+            $('.icon-lock').removeClass('closed');
+          }
+        })
+        .fail(function (data, textStatus, jqXHR) {
+        });
+      });
+
+      //if (!window.Zavrus) { window.Zavrus = {}; }
+      window.Zavrus = {
+        isLocked: function () {
+          return LOCKED;
+        },
+        getEmail: function () {
+          return EMAIL;
+        }
+      };
+
+      % if ($self->flash('show_message') == 1) {
+        bootbox.dialog({message: '<%=$self->flash('message')%>',
+          title: "zaVrus.com",
+          buttons: {
+            main: {
+              label: "Закрыть",
+              className: "btn-primary",
+            }
+          }
+        });
+      % }
+
+      $('form').submit(function(e) {
+        e.preventDefault();
+        $('.screen-message').addClass('hidden');
+        var form_name = $(this).attr('id');
+        if (form_name == 'UnlockForm') {
+          var email = $('#InputEmail_u').val();
+          var access_key = $('#InputKey_u').val();
+          if (!access_key || !email) {
+            $('.screen-message').text('Ключ не введен');
+            $('.screen-message').removeClass('hidden');
+            return;
+          }
+          $.ajax({
+            type: "POST",
+            url: "/api/user/unlock",
+            data: {
+              email: email,
+              access_key: access_key,
+            },
+          })
+          .done(function (data, textStatus, jqXHR) {
+            if (data.result == 'ok') {
+              LOCKED = 0;
+              EMAIL = email;
+              $('.icon-lock').removeClass('closed');
+              bootbox.dialog({message: 'Доступ открыт!',
+                title: "Zavrus.com",
+                buttons: {
+                  main: {
+                    label: "Закрыть",
+                    className: "btn-primary",
+                  }
+                }
+              });
+              $('.unlock-screen').addClass('hidden');
+              location.reload();
+              // вывести e-mail и оставшееся время
+            } else {
+              $('.screen-message').text('Неверный ключ');
+              $('.screen-message').removeClass('hidden');              
+            }
+          })
+          .fail(function (jqXHR, textStatus, errorThrown) {
+            $('.screen-message').text('Произошла ошибка...');
+            $('.screen-message').removeClass('hidden');            
+          });
+
+          $('.key-screen').addClass('hidden');
+        } else if ($(this).attr('id') == 'emailForm') {
+          var email = $('#InputEmail').val();
+          if (!email) {
+            $('.screen-message').text('Не введен e-mail');
+            $('.screen-message').removeClass('hidden');
+            return;
+          }
+          $.ajax({
+            type: "POST",
+            url: "/api/user/create",
+            data: {email: email},
+          })
+          .done(function (data, textStatus, jqXHR) {
+            bootbox.alert("Для проверки указанного почтового ящика на него было отправлено письмо с проверочным кодом", function() {});
+            //alert('Для проверки указанного почтового ящика на него было отправлено письмо с проверочным кодом');
+            $('.email-screen').addClass('hidden');
+            $('.code-screen').removeClass('hidden');
+          })
+          .fail(function (jqXHR, textStatus, errorThrown) {
+            $('.screen-message').text('Произошла ошибка...');
+            $('.screen-message').removeClass('hidden');
+          });
+
+        } else if ($(this).attr('id') == 'codeForm') {
+          var email = $('#InputEmail').val();
+          var vcode = $('#InputCode').val();
+          if (!vcode || !email) {
+            $('.screen-message').text('Код не введен');
+            $('.screen-message').removeClass('hidden');
+            return;
+          }
+          $.ajax({
+            type: "POST",
+            url: "/api/user/check_code",
+            data: {
+              email: email,
+              vcode: vcode,
+            },
+          })
+          .done(function (data, textStatus, jqXHR) {
+            if (data.result == 'ok') {
+              $('.code-screen').addClass('hidden');
+              $('.key-pay-screen').removeClass('hidden');
+            } else {
+              $('.screen-message').text('Неверный код');
+              $('.screen-message').removeClass('hidden');              
+            }
+          })
+          .fail(function (jqXHR, textStatus, errorThrown) {
+            $('.screen-message').text('Произошла ошибка...');
+            $('.screen-message').removeClass('hidden');            
+          });
+
+        } else if ($(this).attr('id') == 'keyPayForm') {
+
+          var email = $('#InputEmail').val();
+          var payment_system = $('input[name="optionPaymentSystem"]:checked').val();
+
+          if (payment_system == 'robokassa') {
+            $.ajax({
+              type: "POST",
+              url: "/api/robokassa/prepare",
+              data: {email: email},
+            })
+            .done(function (data, textStatus, jqXHR) {
+              $("#RoboPaymentForm [name='InvId']").val(data.inv_id);
+              $("#RoboPaymentForm [name='SignatureValue']").val(data.crc);
+              $("#RoboPaymentForm [name='OutSum']").val(data.out_sum);
+
+              $('.key-pay-screen').addClass('hidden');
+              $('.key-screen').removeClass('hidden');
+
+              document.getElementById("RoboPaymentForm").submit();
+            })
+            .fail(function (jqXHR, textStatus, errorThrown) {
+              alert('Не удалось выставить счет, повторите попытку позже или обратитесь в службу поддержки');
+            });
+          } else if (payment_system == 'walletone') {
+
+            $.ajax({
+              type: "POST",
+              url: "/api/walletone/prepare",
+              data: {email: email},
+            })
+            .done(function (data, textStatus, jqXHR) {
+              $("#WalletonePaymentForm [name='WMI_PAYMENT_NO']").val(data.inv_id);
+              $("#WalletonePaymentForm [name='WMI_PAYMENT_AMOUNT']").val(data.out_sum);
+              $("#WalletonePaymentForm [name='WMI_SIGNATURE']").val(data.crc);
+
+              $("#WalletonePaymentForm [name='WMI_SUCCESS_URL']").val(data.success_url);
+              $("#WalletonePaymentForm [name='WMI_FAIL_URL']").val(data.fail_url);
+
+              $('.key-pay-screen').addClass('hidden');
+              $('.key-screen').removeClass('hidden');
+
+              document.getElementById("WalletonePaymentForm").submit();
+            })
+            .fail(function (jqXHR, textStatus, errorThrown) {
+              alert('Не удалось выставить счет, повторите попытку позже или обратитесь в службу поддержки');
+            });
+
+          } else {
+            // wtf?!
+          }
+
+        } else if ($(this).attr('id') == 'keyForm') {
+          var email = $('#InputEmail').val();
+          var access_key = $('#InputKey').val();         
+          if (!access_key || !email) {
+            $('.screen-message').text('Ключ не введен');
+            $('.screen-message').removeClass('hidden');
+            return;
+          }
+          $.ajax({
+            type: "POST",
+            url: "/api/user/unlock",
+            data: {
+              email: email,
+              access_key: access_key,
+            },
+          })
+          .done(function (data, textStatus, jqXHR) {
+            if (data.result == 'ok') {
+
+              LOCKED = 0;
+              EMAIL = email;
+              $('.icon-lock').removeClass('closed');
+              bootbox.dialog({message: 'Доступ открыт!',
+                title: "Zavrus.com",
+                buttons: {
+                  main: {
+                    label: "Закрыть",
+                    className: "btn-primary",
+                  }
+                }
+              });
+              $('.key-screen').addClass('hidden');
+              location.reload();              
+            } else {
+              $('.screen-message').text('Неверный ключ');
+              $('.screen-message').removeClass('hidden');
+            }
+          })
+          .fail(function (jqXHR, textStatus, errorThrown) {
+            $('.screen-message').text('Произошла ошибка...');
+            $('.screen-message').removeClass('hidden');
+          });
+
+          $('.key-screen').addClass('hidden');
+        }
+      });
+
+      $(document).on('click', '.unlock-screen-opener', function() {
+        return;
+        if (LOCKED) {
+          $('.screen-message').addClass('hidden');
+          $('.get-key-screen').addClass('hidden');
+          $('.unlock-screen').toggleClass('hidden');
+        } else {
+          $.ajax({
+            type: "POST",
+            url: "/api/user/lock",
+            data: {},
+          })
+          .done(function (data, textStatus, jqXHR) {
+            console.log(data);
+            if (data.result == 'ok') {
+              LOCKED = 1;
+              $('.icon-lock').addClass('closed');
+              location.reload();
+            } else {
+
+            }
+          })
+          .fail(function (jqXHR, textStatus, errorThrown) {
+
+          });          
+        }
+      });
+
+      $('.close').click(function() {
+        $('.screen-message').addClass('hidden');
+        $('.unlock-screen').addClass('hidden');
+        $('.get-key-screen').addClass('hidden');        
+      });
+
+      $('#userReg').click(function() {
+        $('.screen-message').addClass('hidden');
+        $('.unlock-screen').addClass('hidden');
+        $('.email-screen').removeClass('hidden');
+      });
+
+    </script>
+
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+    (function (d, w, c) {
+        (w[c] = w[c] || []).push(function() {
+            try {
+                w.yaCounter27417269 = new Ya.Metrika({id:27417269,
+                        webvisor:true,
+                        clickmap:true,
+                        trackLinks:true,
+                        accurateTrackBounce:true});
+            } catch(e) { }
+        });
+
+        var n = d.getElementsByTagName("script")[0],
+            s = d.createElement("script"),
+            f = function () { n.parentNode.insertBefore(s, n); };
+        s.type = "text/javascript";
+        s.async = true;
+        s.src = (d.location.protocol == "https:" ? "https:" : "http:") + "//mc.yandex.ru/metrika/watch.js";
+
+        if (w.opera == "[object Opera]") {
+            d.addEventListener("DOMContentLoaded", f, false);
+        } else { f(); }
+    })(document, window, "yandex_metrika_callbacks");
+    </script>
+    <noscript><div><img src="//mc.yandex.ru/watch/27417269" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
+
+  </body>
+</html>

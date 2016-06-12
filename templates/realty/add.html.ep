@@ -1,0 +1,433 @@
+% layout 'default';
+
+% use JSON;
+
+% content_for header => begin
+<link rel="stylesheet" href="/assets/dropzone/dropzone.css">
+<style type="text/css">
+  .add-label {
+    font-size: 28px;
+    font-weight: 200;
+    letter-spacing: 2px !important;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    content: "Подача объявления";
+  }  
+
+  .dropzone-wrap {
+    margin: 8px 0;
+    -webkit-box-shadow: 0 0 50px rgba(0,0,0,0.13);
+    box-shadow: 0 0 50px rgba(0,0,0,0.13);
+    padding: 4px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;    
+  }
+
+  .dropzone {
+    border: 1px solid rgba(0,0,0,0.03);
+    min-height: 240px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    background: rgba(0,0,0,0.03);
+    padding: 8px;
+  }
+
+  .easy-label {
+    color: #B6B6B6;
+    font-weight: 200;
+  }
+
+  .checkbox {
+    color: #555;
+    font-weight: 200;
+  }
+
+  .button-submit {
+    outline: none;
+    width: 66.666666%;
+    height: 50px;
+    margin-left: 16.666666%;
+    border: 0px;
+    background-color: #8EC448;
+    font-size: 24px;
+    font-weight: 200;
+    color: #fff;
+  }
+</style>
+% end
+
+% content_for javascript => begin
+<script type="application/javascript" src="/assets/dropzone/dropzone.js"></script>
+<script type="application/javascript">
+
+  var photos = [];
+
+  var dict = {
+    dishwasher: 'посудомоечная машина',
+    fridge: 'холодильник',
+    tv: 'телевизор',
+    boiler: 'бойлер',
+    washer: 'стиральная машина',
+    conditioner: 'кондиционер',
+    windows: 'пластиковые окна',
+    balcony: 'балкон',
+
+    smoke: 'можно курить',
+    pets: 'можно с животными',
+    childs: 'подходит для семьи с детьми',
+
+    garden: 'участок',
+    garage: 'место под а/м (гараж)',
+    water: 'скважина (колонка)',
+    shambo: 'шамбо',
+    drain: 'слив воды в доме',
+  };
+
+  Dropzone.options.photoDropzone = {
+    addRemoveLinks: true,
+    dictRemoveFile: "Удалить",
+    acceptedFiles: "image/*",
+    dictDefaultMessage: "Перенесите фотографии сюда (или кликните для выбора фото)",
+    success: function (file, response) {
+      photos.push(response.photo_url);
+    }
+  }
+
+  $("#selectRealtyType").change(function() {
+    if ($(this).val() == 'house' || $(this).val() == 'cottage') { // дом || коттедж
+     $('#houseSpec ').removeClass('hidden');
+     $('#flatSpec ').addClass('hidden');
+    } else {
+     $('#houseSpec ').addClass('hidden');
+     $('#flatSpec ').removeClass('hidden');
+    }
+  });
+
+  $('#buttonSubmit').click(function() {
+    var type_code = $('#selectRealtyType').val();
+    var rooms_count = $('#selectRoomsCount').val();
+    var floor = parseInt($('#inputFloor').val(), 10) || null;
+    var floors_count = parseInt($('#inputFloorsCount').val(), 10) || null;
+    var price = parseInt($('#inputPrice').val(), 10) || null;
+    var owner_phones_str = $('#inputPhone').val();
+
+    if (!floor && floors_count) {
+      floor = floors_count;
+      floors_count = null;
+    }
+
+    if (floor > floors_count) {
+      floors_count = null;
+    }
+
+    if ($('#inputPhone').val().length < 6) {
+      bootbox.dialog({message: 'Необходимо указать номер телефона',
+        title: "zaVrus.com",
+        buttons: {
+          main: {
+            label: "Закрыть",
+            className: "btn-primary",
+            callback: function() {
+            }
+          }
+        }
+      });
+      return;
+    }
+
+    var spec_array = [];
+    spec_array.push($('#inputAddress').val());
+    if (type_code == 'house' || type_code == 'cottage') {
+      $('#houseSpec input:checkbox:checked').each(function () {
+        spec_array.push(dict[$(this).val()]);
+      });
+    } else {
+      $('#flatSpec input:checkbox:checked').each(function () {
+        spec_array.push(dict[$(this).val()]);
+      });
+    }
+
+    var description = $('#textDescription').val();    
+
+    $.ajax({
+      type: "POST",
+      url: "/api/realty/add",
+      data: {
+        type_code: type_code,
+        rooms_count: rooms_count,
+        floor: floor,
+        floors_count: floors_count,
+        price: price,
+        owner_phones_str: owner_phones_str,
+        specs: spec_array.join(', '),
+        description: description,
+        photos: photos,
+      },
+    })
+      .done(function (data, textStatus, jqXHR) {
+        if (data.result == 'ok') {
+
+          bootbox.dialog({message: 'Объявление отправлено на проверку, скоро наши сторудники свяжутся с вами. Код для удаления объявления: ' + data.realty_code,
+            title: "zaVrus.com",
+            buttons: {
+              main: {
+                label: "Закрыть",
+                className: "btn-primary",
+                callback: function() {
+                  location.reload();
+                }
+              }
+            }
+          });
+
+          // перезагрузить страницу?
+        } else {
+          bootbox.dialog({message: 'При подаче объявления возникла ошибка, свяжитесь со службой поддержки (тел. )',
+            title: "zaVrus.com",
+            buttons: {
+              main: {
+                label: "Закрыть",
+                className: "btn-primary",
+                callback: function() {
+                  location.reload();
+                }
+              }
+            }
+          });
+        }
+      });
+
+
+  });
+
+  $(".number-input").keydown(function (e) {
+      // Allow: backspace, delete, tab, escape, enter and .
+      if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 110,]) !== -1 ||
+           // Allow: Ctrl+A
+          (e.keyCode == 65 && e.ctrlKey === true) || 
+           // Allow: home, end, left, right
+          (e.keyCode >= 35 && e.keyCode <= 39)) {
+               // let it happen, don't do anything
+               return;
+      }
+      // Ensure that it is a number and stop the keypress
+      if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+          e.preventDefault();
+      }
+  });
+
+    function setFavBadge() {
+      var fav_str = localStorage.getItem('fav_list');
+      var fav;
+      if (fav_str) {
+        fav = JSON.parse(fav_str);
+        $('#fav-count-badge').text(Object.keys(fav).length);
+        if (Object.keys(fav).length == 0) {
+          $('#fav-count-badge').addClass('hidden');
+        } else {
+          $('#fav-count-badge').removeClass('hidden');
+        }
+      }
+    }
+    setFavBadge();
+
+</script>
+% end
+
+% content_for modals => begin
+
+% end
+
+<div class="container" style="margin-bottom: 25px;">
+  <div class="col-lg-offset-2 col-lg-8 col-md-offset-2 col-md-8" id="AddDiv" style="padding-top: 25px;">
+    <div style="text-align: center; margin-bottom: 15px; margin-top: 10px;">
+      <span class="add-label">Подать объявление</span>
+    </div>
+
+<hr class="featurette-divider">
+
+    <div class="form-horizontal">
+      <div class="form-group">
+        <label class="col-lg-4 col-md-4 col-sm-4 control-label easy-label" for="selectRealtyType">Тип недвижимости</label>
+        <div class="col-lg-5 col-md-5 col-sm-5">
+          <select class="form-control" name="type_code" id="selectRealtyType">
+            <option value="room">Комната</option>
+            <option value="apartment">Квартира</option>
+            <option value="apartment_small">Малосемейка</option>
+            <option value="townhouse">Таунхаус</option>
+            <option value="house">Дом</option>
+            <option value="cottage">Коттедж</option>
+            <option value="commersial">Офис</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-lg-4 col-md-4 col-sm-4 control-label easy-label" for="selectRoomsCount">Количество комнат</label>
+        <div class="col-lg-5 col-md-5 col-sm-5">
+        %= select_field 'rooms_count' => [(map { [$_ => $_] } (1..4)), ['5 и более' => '5']], id => 'selectRoomsCount', class => 'form-control'
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-lg-4 col-md-4 col-sm-4 control-label easy-label" for="inputFloor">Этаж</label>
+        <div class="col-lg-5 col-md-5 col-sm-5">
+          <div class="" style="width: 80px; display: inline-block;">
+            <input type="text" class="form-control number-input" id="inputFloor" placeholder="">
+          </div>
+          <div class="" style="display: inline-block;">
+            <img alt="" src="/img/separate.png">
+          </div>
+          <div class="" style="width: 80px; display: inline-block;">
+            <input type="text" class="form-control number-input" id="inputFloorsCount" placeholder="">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-lg-4 col-md-4 col-sm-4 control-label easy-label" for="inputAddress">Адрес</label>
+        <div class="col-lg-5 col-md-5 col-sm-5">
+          <input type="text" class="form-control" id="inputAddress" placeholder="">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-lg-4 col-md-4 col-sm-4 control-label easy-label" for="inputPrice">Цена</label>
+        <div class="col-lg-5 col-md-5 col-sm-5">
+          <input type="text" class="form-control number-input" id="inputPrice" placeholder="тыс. руб.">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-lg-4 col-md-4 col-sm-4 control-label easy-label" for="inputPhone">Контактный телефон</label>
+        <div class="col-lg-5 col-md-5 col-sm-5">
+          <input type="text" class="form-control" id="inputPhone" placeholder="Телефон (можно несколько)">
+        </div>
+      </div>
+
+      <div class="form-group" id="flatSpec">
+        <label class="col-lg-4 col-md-4 col-sm-4 control-label easy-label" for="">Дополнительно</label>
+        <div class="col-lg-8 col-md-8 col-sm-8" style="height: 29px;"></div>
+        <div class="col-lg-12 col-md-12 col-sm-12">
+          <div class="col-lg-4 col-md-4 col-sm-4">
+            <form role="form">
+              <label class="checkbox">
+                <input type="checkbox" value="balcony"> Балкон
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" value="dishwasher"> Посудомоечная машина
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" value="fridge"> Холодильник
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" value="washer"> Стиральная машина
+              </label>
+            </form>
+          </div>
+          <div class="col-lg-4 col-md-4 col-sm-4">
+            <form role="form">
+              <label class="checkbox">
+                <input type="checkbox" value="tv"> Телевизор
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" value="boiler"> Бойлер
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" value="conditioner"> Кондиционер
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" value="windows"> Пластиковые окна
+              </label>
+            </form>
+          </div>
+          <div class="col-lg-4 col-md-4 col-sm-4">
+            <form role="form">
+              <label class="checkbox">
+                <input type="checkbox" value="smoke"> Можно курить
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" value="pets"> Можно с животными
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" value="childs"> Подходит для семьи с детьми
+              </label>
+            </form>
+          </div> 
+        </div>
+      </div>
+
+      <div class="form-group hidden" id="houseSpec">
+        <label class="col-lg-4 col-md-4 col-sm-4 control-label easy-label" for="InputKey">Дополнительно</label>
+        <div class="col-lg-8 col-md-8 col-sm-8" style="height: 29px;"></div>
+        <div class="col-lg-12 col-md-12 col-sm-12">
+          <div class="col-lg-4 col-md-4 col-sm-4">
+            <form role="form">
+              <label class="checkbox">
+                <input type="checkbox" value="fridge"> Холодильник
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" value="washer"> Стиральная машина
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" value="tv"> Телевизор
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" value="boiler"> Бойлер
+              </label>
+            </form>
+          </div>
+          <div class="col-lg-4 col-md-4 col-sm-4">
+            <form role="form">
+              <label class="checkbox">
+                <input type="checkbox" value="garden"> Участок
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" value="garage"> Место под а/м (гараж)
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" value="water"> Скважина (колонка)
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" value="shambo"> Шамбо
+              </label>
+            </form>
+          </div>
+          <div class="col-lg-4 col-md-4 col-sm-4">
+            <form role="form">
+              <label class="checkbox">
+                <input type="checkbox" value="drain"> Слив воды в доме
+              </label>
+            </form>
+          </div> 
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-lg-offset-2 col-lg-4 col-md-offset-2 col-md-4 col-sm-offset-2 col-sm-4 easy-label" for="textDescription">Описание</label>
+        <div class="col-lg-offset-2 col-lg-8 col-md-offset-2 col-md-8 col-sm-offset-2 col-sm-8">
+          <textarea class="form-control" id="textDescription" placeholder="" style="height: 120px; resize: none;"></textarea>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 48px;">
+        <label class="col-lg-offset-2 col-lg-4 col-md-offset-2 col-md-4 col-sm-offset-2 col-sm-4  easy-label" for="InputKey">Фотографии</label>
+        <div class="col-lg-offset-1 col-lg-10 col-lg-offset-1 col-lg-10 col-md-offset-1 col-md-10 col-sm-offset-1 col-sm-10">
+          <div class="dropzone-wrap">
+            <form action="/api/realty/photo_upload" class="dropzone" id="photoDropzone"></form>
+          </div>
+        </div>
+      </div>
+
+      <button class="button-submit" id="buttonSubmit">Подать объявление</button>
+
+    </div>
+  </div>  
+</div>
+<hr class="featurette-divider">
+<div class="container" style="margin-bottom: 50px;">
+  <br>Использование сайта, в том числе подача объявлений, означает согласие с пользовательским <a href="/pages/agreement">соглашением</a>.
+  <br>Оплачивая услуги на сайте, Вы принимаете <a href="/pages/oferta">оферту</a>.
+  <div class="clear"></div>
+</div>
+
