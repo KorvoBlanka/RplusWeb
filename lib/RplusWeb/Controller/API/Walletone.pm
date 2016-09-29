@@ -80,38 +80,45 @@ sub result {
     my $inv_id = $self->param('WMI_PAYMENT_NO');
     my $sum = $self->param('WMI_PAYMENT_AMOUNT');
 
-    my $bill = Rplus::Model::BillingExt::Manager->get_objects(query => [id => $inv_id])->[0];
+    my $sqlite = DBI->connect('dbi:SQLite:dbname=zavrus.db;','','',{RaiseError=>1},)
+    or die die $DBI::errstr;
+
+    $sth = $sqlite->prepare( "SELECT * FROM billing WHERE account_id = '$inv_id';" );
+    $sth->execute();
+
+    my ( $fid, $finv_id, $fsum, $fstate, $fprovider) = $sth->fetchrow();
+
     # проверим счет
-    if(!$bill) {
+    if(!$fid) {
         return $self->render(text => 'WMI_RESULT=RETRY&WMI_DESCRIPTION=bill not found');
     }
 
     # проверим сумму
-    if($bill->sum != $sum) {
+    if($fsum != $sum) {
         return $self->render(text => 'WMI_RESULT=RETRY&WMI_DESCRIPTION=wrong_sum');
     }
 
-    my $account = Rplus::Model::AccountExt::Manager->get_objects(query => [id => $bill->{'account_id'}, del_date => undef])->[0];
-    if (!$account) {
+    $sth = $sqlite->prepare( "SELECT id, email, balance FROM accounts WHERE id = '$finv_id';" );
+    $sth->execute();
+    my ( $aemail, $abalance) = $sth->fetchrow();
+
+    if (!$aemail) {
         return $self->render(text => 'WMI_RESULT=RETRY&WMI_DESCRIPTION=user not found');
     }
 
-    $bill->state(1);    # state ok
-    $bill->save(changes_only => 1);
+    $sqlite->do( "UPDATE billing SET state = 1 WHERE id = $fid;" );
 
-    my $balance = $account->{'balance'} + $sum;
+    my $balance = $abalance + $sum;
 
-    my $dt = DateTime->now();
+    my $dt = DateTime->now(time_zone=>'local');
     my $exp = $dt->add(days => 1);
-    $account->access_key(_generate_code(8));
-    $account->access_key_exp($exp);
 
-    $account->save(changes_only => 1);
+    my $genercode = _generate_code(8);
+    $sqlite->do( "UPDATE accounts SET access_key = '$genercode', access_key_exp = '$exp' WHERE id = $finv_id;" );
 
     my $subject = 'Ключ доступа';
-    my $message = 'Ваш ключ на один день: ';
+    my $message = 'Ваш ключ на один день: ' .$genercode;
 
-    $message .= $account->access_key;
     Rplus::Util::Email::send($account->email, $subject, $message);
 
     return $self->render(text => 'WMI_RESULT=OK');
@@ -123,15 +130,24 @@ sub success {
     my $inv_id = $self->param('InvId');
     my $sum = $self->param('OutSum');
 
-    my $bill = Rplus::Model::BillingExt::Manager->get_objects(query => [id => $inv_id])->[0];
+    my $sqlite = DBI->connect('dbi:SQLite:dbname=zavrus.db;','','',{RaiseError=>1},)
+    or die die $DBI::errstr;
+
+    $sth = $sqlite->prepare( "SELECT account_id FROM billing WHERE account_id = '$inv_id';" );
+    $sth->execute();
+    my ($id) = $sth->fetchrow();
+
     # проверим
-    if(!$bill) {
+    if(!$id) {
         $self->flash(show_message => 1, message => "Не найден счет. Обратитесь в службу поддержки.");
         return $self->redirect_to('/cabinet');
     }
 
-    my $account = Rplus::Model::AccountExt::Manager->get_objects(query => [id => $bill->{'account_id'}, del_date => undef])->[0];
-    if (!$account) {
+    $sth = $sqlite->prepare( "SELECT id FROM accounts WHERE id = '$id';" );
+    $sth->execute();
+    my ($aid) = $sth->fetchrow();
+
+    if (!$aid) {
         $self->flash(show_message => 1, message => "Не найдена учетная запись. Обратитесь в службу поддержки.");
     }
 
@@ -144,10 +160,15 @@ sub fail {
 
     my $inv_id = $self->param('InvId');
 
-    my $bill = Rplus::Model::BillingExt::Manager->get_objects(query => [id => $inv_id])->[0];
-    if ($bill) {
-        $bill->state(2);    # state fail
-        $bill->save(changes_only => 1);
+    my $sqlite = DBI->connect('dbi:SQLite:dbname=zavrus.db;','','',{RaiseError=>1},)
+    or die die $DBI::errstr;
+
+    $sth = $sqlite->prepare( "SELECT id FROM billing WHERE id = '$inv_id';" );
+    $sth->execute();
+    my ($id) = $sth->fetchrow();
+
+    if ($id) {
+        $sqlite->do( "UPDATE billing SET state = 2, access_key_exp = '$exp' WHERE id = $id;" ); # state fail
     }
 
     $self->flash(show_message => 1, message => 'Платеж не принят');

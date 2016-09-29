@@ -43,7 +43,7 @@ sub list {
     my $offer_type_code = $self->param('offer_type_code');
     my $q = $self->param('q');
     my $type_code = $self->param('type_code');
-    my $landmark_id = $self->param('landmark_id');
+    my $district = $self->param('district');
     my $rooms_count = $self->param('rooms_count');
     my $price_low = $self->param('price_low');
     my $price_high = $self->param('price_high');
@@ -57,7 +57,7 @@ sub list {
         state_code => 'raw',
         offer_type_code => $offer_type_code,
         ($type_code ? (type_code => $type_code) : ()),
-        ($landmark_id && $landmark_id =~ /^\d+$/ ? \("landmarks && '{$landmark_id}'") : ()),
+        ($district ? (district => $district) : ()),
         ($rooms_count ? ($rooms_count =~ /^\d$/ ? ($rooms_count <= 4 ? (rooms_count => $rooms_count) : (rooms_count => {ge => 5})) : ()) : ()),
         ($price_low && $price_high ? (price => {ge_le => [$price_low, $price_high]}) : ($price_low ? (price => {ge => $price_low}) : ($price_high ? (price => {le => $price_high}) : ()))),
         Rplus::Util::Query->parse($q, $self),
@@ -86,13 +86,9 @@ sub list {
     );
     while (my $realty = $realty_iter->next) {
         my $street = '';
-        my $area = '';
         if ($realty->address_object_id) {
             my $ap = from_json($realty->address_object->metadata)->{'addr_parts'};
             $street = $ap->[0]->{'name'}.($ap->[0]->{'short_type'} ne 'ул' ? ' '.$ap->[0]->{'full_type'} : '');
-        }
-        if ($realty->sublandmark_id) {
-            $area = $realty->sublandmark->name;
         }
 
         my (@digest, $squares, $squares_land, $floors);
@@ -118,7 +114,7 @@ sub list {
             id => $realty->id,
             type => $realty->type->name,
             street => $street,
-            area => $area,
+            district => $district,
             rooms_count => $realty->rooms_count,
             rooms_offer_count => $realty->rooms_offer_count,
             squares => $squares,
@@ -161,14 +157,12 @@ sub get {
     return $self->render_not_found unless $realty;
 
     my $street = '';
-    my $area = '';
+    my $district = '';
     if ($realty->address_object_id) {
         my $ap = from_json($realty->address_object->metadata)->{'addr_parts'};
         $street = $ap->[0]->{'name'}.($ap->[0]->{'short_type'} ne 'ул' ? ' '.$ap->[0]->{'full_type'} : '');
     }
-    if ($realty->sublandmark_id) {
-        $area = $realty->sublandmark->name;
-    }
+
     my $squares = join('/', $realty->square_total || (), $realty->square_living || (), $realty->square_kitchen || ()).' м²' if $realty->square_total || $realty->square_living || $realty->square_kitchen;
     my $squares_land = $realty->square_land.($realty->square_land_type || 'ar' eq 'ar' ? ' сот.' : ' га.') if $realty->square_land;
     my $floors = join('/', $realty->floor || (), $realty->floors_count || ()) if $realty->floor || $realty->floors_count;
@@ -178,7 +172,7 @@ sub get {
         type => $realty->type->name,
         offer_type => $realty->offer_type->name,
         street => $street,
-        area => $area,
+        district => $district,
         rooms_count => $realty->rooms_count,
         squares => $squares,
         squares_land => $squares_land,

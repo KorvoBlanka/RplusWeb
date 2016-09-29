@@ -2,6 +2,7 @@
 % title ('zaVrus');
 
 % use POSIX qw(ceil);
+% use Data::Dumper;
 
 % content_for header => begin
 <link rel="stylesheet" href="/assets/typeahead.js/0.9.4-dev/css/typeahead.js-bootstrap.css">
@@ -391,7 +392,7 @@ $(function () {
     //var offer_type_code = $('[name="offer_type"]:input').val(),
     var offer_type_code = 'rent',
         type_code     = $('[name="type_code"]:input').val(),
-        landmark_id = $('[name="landmark_id"]:input').val(),
+        district = $('[name="district"]:input').val(),
         rooms_count = $('[name="rooms_count"]:input').val(),
         price_low   = $("#slider-range" ).slider("values", 0),
         price_high  = $("#slider-range" ).slider("values", 1),
@@ -411,7 +412,7 @@ $(function () {
         offer_type_code: offer_type_code,
         type_code: type_code,
         rooms_count: rooms_count,
-        landmark_id: landmark_id,
+        district: district,
         price_low: price_low,
         price_high: price_high,
         sort_by: sort_by,
@@ -482,8 +483,8 @@ $(function () {
           if (r.squares_land) {
             //xhtml += '        <p style="margin: 0">Участок:</p>';
           }
-          xhtml += '        <p class="text-small">Улица: <span class="text-small a-val">' + r.street + '</span></p>';
-          xhtml += '        <p class="text-small">Район: <span class="text-small a-val">' + r.area + '</span></p>';
+          xhtml += '        <p class="text-small">Улица: <span class="text-small a-val">' + r.address + '</span></p>';
+          xhtml += '        <p class="text-small">Район: <span class="text-small a-val">' + r.district + '</span></p>';
           xhtml += '      </div>';
           xhtml += '    </div>';
           xhtml += '  </div>';
@@ -550,8 +551,8 @@ $(function () {
         xhtml += '      </div>';
         xhtml += '      <div class="row">';
         xhtml += '        <div class="" style="padding: 5px 0px 5px 20px; position: relative;">';
-        xhtml += '          <p class="text-small">Улица: <span class="text-small a-val">' + r.street + '</span></p>';
-        xhtml += '          <p class="text-small">Район: <span class="text-small a-val">' + r.area + '</span></p>';
+        xhtml += '          <p class="text-small">Улица: <span class="text-small a-val">' + r.address + '</span></p>';
+        xhtml += '          <p class="text-small">Район: <span class="text-small a-val">' + r.district + '</span></p>';
         xhtml += '          <span href="" class="text-danger realty-price" style=""><strong>' + price + ' тыс. руб.</strong></span>';
         xhtml += '          <span class="text-small text-easy-ns" style="position: absolute; right: 25px; bottom: 8px;">' + moment(r.change_date).format("DD.MM.YYYY HH:mm") + '</span>';
         xhtml += '        </div>';
@@ -812,21 +813,12 @@ $(function () {
       <div class="form-group">
         <div class="styled-select transparent">
         % # TODO: Use cache
-        % my $landmark_optgroups;
-        % unless ($landmark_optgroups) {
-        %   $landmark_optgroups = [];
-        %   my $landmarks = db->dbh->selectall_arrayref(q{SELECT id, name, COALESCE(NULLIF(metadata->>'group',''), type) AS group_name FROM landmarks WHERE type IN ('landmark', 'sublandmark') AND delete_date IS NULL ORDER BY group_name, COALESCE(NULLIF(metadata->>'pos',''), '999')::integer, name}, {Slice => {}});
-        %   my %groups;
-        %   for (@$landmarks) {
-        %     my $x = $_->{group_name} eq 'landmark' ? 'Район' : ($_->{group_name} eq 'sublandmark' ? 'Подрайон' : $_->{group_name});
-        %     unless (exists $groups{$x}) {
-        %       $groups{$x} = scalar keys %groups;
-        %       $landmark_optgroups->[$groups{$x}] = {$x => []};
-        %     }
-        %     push @{$landmark_optgroups->[$groups{$x}]->{$x}}, [$_->{name}, $_->{id}];
-        %   }
+        % my $landmarks = db->dbh->selectall_arrayref(q{SELECT DISTINCT district FROM realty WHERE district IS NOT NULL AND length(district)>0 AND state_code = 'raw'} , {Slice => {}});
+        % my @lands=();
+        % foreach my $temp(@$landmarks){
+        %           push @lands,$temp->{district};
         % }
-        %= select_field 'landmark_id' => [['Расположение...' => ''], @$landmark_optgroups], class => 'form-control input-sm'
+        %= select_field 'district' => [['Расположение...' => ''], @lands], class => 'form-control input-sm'
         </div>
       </div>
       <div class="form-group">

@@ -107,25 +107,24 @@ sub unlock {
     my $sqlite = DBI->connect('dbi:SQLite:dbname=zavrus.db;','','',{RaiseError=>1},)
     or die die $DBI::errstr;
 
-    my $sth = $sqlite->prepare( "SELECT email FROM accounts WHERE email = '$email';" );
-    $sth->execute();
-    my $newmail = $sth->fetchrow();
+    my $dt = DateTime->now(time_zone=>'local');
+    my $format = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H:%M:%S' );
+    my $ndate= $format->format_datetime($dt);
 
-    my $account = Rplus::Model::AccountsExt::Manager->get_objects(
-        query => [
-            email => $email,
-            access_key => $access_key,
-            access_key_exp => {gt => 'now()'},
-        ])->[0];
-    return $self->render(json => {result => 'fail'}) unless $account;
+    my $sth = $sqlite->prepare( "SELECT id, email, access_key, access_key_exp  FROM accounts WHERE email = '$email' AND access_key='$access_key' AND access_key_exp > strftime('%Y-%m-%d %H:%M:%S', '$ndate'); " );
+    $sth->execute();
+    my ($exid, $exmail, $exkey, $exkey_exp) = $sth->fetchrow();
+
+
+    return $self->render(json => {result => 'fail'}) unless $exid;
 
     $self->session->{'user'} = {
-        id => $account->id,
-       email => $account->email,
-        access_key => $account->access_key,
+        id => $exid,
+        email => $exmail,
+        access_key => $exkey,
     };
 
-    return $self->render(json => {result => 'ok', exp => $account->access_key_exp});
+    return $self->render(json => {result => 'ok', exp => $exkey_exp});
 }
 
 sub lock {

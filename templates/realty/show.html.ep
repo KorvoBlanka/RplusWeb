@@ -369,7 +369,6 @@
       $('.show-contacts').replaceWith(xhtml);
     %} else{
       $('.unlock-screen').toggleClass('hidden');
-
     %}
     });
 
@@ -534,17 +533,11 @@
     </div>
     <div class="offset-lg-2 col-lg-8 offset-md-3 col-md-6">
     % if($self->session->{'user'}) {
-    % #if(1 == 2) {
-    <a href="#" class="" style="text-decoration: none !important; display: block; text-align: center;">
-      <div class="realty-obj-header" style="display: inline-block;">
-        <span class="label label-danger" style="display: block; border-radius: 0px; font-size: 22px; font-weight: 200; letter-spacing: 0.5px; padding-top: 10px;">Телефон:
-        % foreach ($realty->{owner_phones}) {
-        % say $_;
-        8<%= $_ %>
-        %}
-        </span>
-      </div>
-    </a>
+    <a href="#" class="show-contacts" style="text-decoration: none !important; display: block; text-align: center;">
+        <div class="realty-obj-header" style="display: inline-block;">
+          <span class="label label-danger" style="display: block; border-radius: 0px; font-size: 22px; font-weight: 200; letter-spacing: 0.5px; padding-top: 10px;">Показать контакты</span>
+        </div>
+      </a>
     % } else {
     %# <a href="#" class="unlock-screen-opener" style="text-decoration: none !important; display: block; text-align: center;">
     <a href="#" class="show-contacts" style="text-decoration: none !important; display: block; text-align: center;">
