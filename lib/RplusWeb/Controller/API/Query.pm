@@ -65,10 +65,10 @@ sub complete {
             $vals{lc($addrobj->name.' '.$addrobj->full_type)} = 1;
         }
     }
-    
+
     for (sort { length($a) <=> length($b) } keys %vals) {
         my $prefix = $q =~ s/$term$//r;
-        push @res, {value => $prefix.$_}; 
+        push @res, {value => $prefix.$_};
         last if @res == $limit;
     }
 

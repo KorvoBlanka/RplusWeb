@@ -2,6 +2,7 @@ package RplusWeb::Controller::API::Realty;
 
 use Mojo::Base 'Mojolicious::Controller';
 
+
 use Rplus::Model::Realty;
 use Rplus::Model::Realty::Manager;
 #use Rplus::Model::RealtyCodesExt;
@@ -11,15 +12,15 @@ use Rplus::Model::Photo::Manager;
 
 use Rplus::Util::Query;
 
+use Data::Dumper;
 use JSON;
-
 sub _generate_code {
     srand(time);
     my $sz = shift;
     my @chars = ("A".."Z", "0".."9");
     my $code;
     $code .= $chars[rand @chars] for 1..$sz;
-    
+
     return $code;
 }
 
@@ -39,7 +40,6 @@ sub _parse_phone_num  {
 
 sub list {
     my $self = shift;
-
     my $offer_type_code = $self->param('offer_type_code');
     my $q = $self->param('q');
     my $type_code = $self->param('type_code');
@@ -49,17 +49,15 @@ sub list {
     my $price_high = $self->param('price_high');
     my $per_page = $self->param('per_page');
     my $page = $self->param('page');
-
     my $sort_by = $self->param('sort_by');
-
-    my $sort_by_q = 't1.change_date DESC';
-    $sort_by_q = 't1.price ASC' if ($sort_by eq 'price');
+    my $sort_by_q = 'change_date DESC';
+    $sort_by_q = 'price ASC' if ($sort_by eq 'price');
 
     my @query = (
-        state_code => 'work',
+        state_code => 'raw',
         offer_type_code => $offer_type_code,
         ($type_code ? (type_code => $type_code) : ()),
-        ($landmark_id && $landmark_id =~ /^\d+$/ ? \("t1.landmarks && '{$landmark_id}'") : ()),
+        ($landmark_id && $landmark_id =~ /^\d+$/ ? \("landmarks && '{$landmark_id}'") : ()),
         ($rooms_count ? ($rooms_count =~ /^\d$/ ? ($rooms_count <= 4 ? (rooms_count => $rooms_count) : (rooms_count => {ge => 5})) : ()) : ()),
         ($price_low && $price_high ? (price => {ge_le => [$price_low, $price_high]}) : ($price_low ? (price => {ge => $price_low}) : ($price_high ? (price => {le => $price_high}) : ()))),
         Rplus::Util::Query->parse($q, $self),
@@ -67,19 +65,18 @@ sub list {
 
     my $res = {
         list => [],
-        count => Rplus::Model::Realty::Manager->get_objects_count(query => [@query, account_id => 4,], require_objects => ['type']) + 1,
+        count => Rplus::Model::Realty::Manager->get_objects_count(query => [@query], require_objects => ['type']) + 1,
     };
 
     # Небольшой костыль: если ничего не найдено, удалим FTS данные
     if (!$res->{count}) {
-        @query = map { ref($_) eq 'SCALAR' && $$_ =~ /^t1\.fts/ ? () : $_ } @query;
+        @query = map { ref($_) eq 'SCALAR' && $$_ =~ /^fts/ ? () : $_ } @query;
         $res->{count} = Rplus::Model::Realty::Manager->get_objects_count(query => [@query, account_id => 4,], require_objects => ['type']);
     }
 
     my $realty_iter = Rplus::Model::Realty::Manager->get_objects_iterator(
         query => [
-            @query,
-            account_id => 4,
+            @query
         ],
         require_objects => ['type'],
         with_objects => ['address_object', 'sublandmark', 'ap_scheme', 'house_type', 'room_scheme', 'condition', 'balcony', 'bathroom'],
@@ -97,7 +94,7 @@ sub list {
         if ($realty->sublandmark_id) {
             $area = $realty->sublandmark->name;
         }
-    
+
         my (@digest, $squares, $squares_land, $floors);
         {
             push @digest, $realty->type->name;
@@ -132,7 +129,7 @@ sub list {
             #last_seen_date => $realty->last_seen_date,
             change_date => $realty->change_date,
         };
-    
+
         push @{$res->{list}}, $x;
     }
 
@@ -148,7 +145,6 @@ sub list {
             $_->{main_photo_thumbnail} = $photo->thumbnail_filename;
         }
     }
-    
     return $self->render(json => $res);
 }
 
@@ -221,7 +217,6 @@ sub abuse {
 
 sub get_max_price {
     my $self = shift;
-
     my $max_price = 50; #$self->db->dbh->selectall_arrayref(q{SELECT MAX(price) FROM realty WHERE offer_type_code like 'rent' AND state_code like 'work'}, {Slice => {}})->[0]->{max};
 
     return $self->render(json => {result => 'ok', max_price => $max_price,});
@@ -258,7 +253,7 @@ sub remove {
     #    ])->[0];
 
 	return $self->render(json => {result => 'fail', reason => 'record_not_found'});
-	
+
     #return $self->render(json => {result => 'fail', reason => 'record_not_found'}) unless $realty_code;
 
     my $realty = Rplus::Model::Realty::Manager->get_objects(

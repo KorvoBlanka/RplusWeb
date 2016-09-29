@@ -1,3 +1,4 @@
+% use Data::Dumper;
 <!DOCTYPE html>
 <html>
   <head>
@@ -28,7 +29,7 @@
         background-color: #f4f4f4;
         background-image: url("/img/background.png");
         background-repeat: repeat;
-        line-height: 160%;        
+        line-height: 160%;
       }
 
       body:after{
@@ -39,7 +40,7 @@
 	  .bootbox-body {
 		margin-left: 10px;
 	  }
-	  
+
       .nav {
         list-style: none;
         text-align: center;
@@ -49,7 +50,7 @@
         .nav {
           text-align: left;
           margin-left: -8px;
-        }        
+        }
       }
 
       .nav li {
@@ -119,8 +120,8 @@
       }
 
       .icon-info.active {
-        /*background: url(img/btn/info_a.svg) no-repeat center;
-        background-size: 48px 48px;*/
+        background: url(img/btn/info_a.svg) no-repeat center;
+        background-size: 48px 48px;
       }
 
       .icon-lock {
@@ -168,19 +169,19 @@
         text-transform: uppercase;
         content: "Вход";
         font-weight: 100;
-        letter-spacing: 2px;        
+        letter-spacing: 2px;
       }
 
       .unlock-screen {
-        border-radius: 4px; 
-        position: fixed; 
-        height: 250px; 
-        width: 360px; 
-        top: 50%; 
-        left: 50%; 
-        margin-top: -125px; 
-        margin-left: -180px; 
-        background-color: rgba(6,33,66,0.9); 
+        border-radius: 4px;
+        position: fixed;
+        height: 250px;
+        width: 360px;
+        top: 50%;
+        left: 50%;
+        margin-top: -125px;
+        margin-left: -180px;
+        background-color: rgba(6,33,66,0.9);
         z-index: 1010;
       }
 
@@ -192,15 +193,15 @@
       }
 
       .get-key-screen {
-        border-radius: 4px; 
-        position: fixed; 
-        width: 360px; 
-        top: 50%; 
-        left: 50%; 
-        margin-top: -85px; 
-        margin-left: -180px; 
+        border-radius: 4px;
+        position: fixed;
+        width: 360px;
+        top: 50%;
+        left: 50%;
+        margin-top: -85px;
+        margin-left: -180px;
         padding-bottom: 10px;
-        background-color: rgba(6,33,66,0.9); 
+        background-color: rgba(6,33,66,0.9);
         z-index: 1010;
         font-size: 16px;
       }
@@ -219,9 +220,9 @@
       }
 
       .close {
-        text-shadow: none; 
+        text-shadow: none;
         opacity: 1;
-        color: #dadada; 
+        color: #dadada;
         margin-right: 12px;
         margin-top: 6px;
       }
@@ -427,7 +428,7 @@
 
     <form id="WalletonePaymentForm" target="_newtab" method="post" action="https://www.walletone.com/checkout/default.aspx" accept-charset="UTF-8">
       <input type="hidden" name="WMI_MERCHANT_ID" value="112664092580"/>
-      <input type="hidden" name="WMI_PAYMENT_AMOUNT" value=""/>
+      <input type="hidden" name="WMI_PAYMENT_AMOUNT" value="99.00"/>
       <input type="hidden" name="WMI_PAYMENT_NO" value=""/>
       <input type="hidden" name="WMI_CURRENCY_ID" value="643"/>
       <input type="hidden" name="WMI_DESCRIPTION" value="Оплата ключа доступа zavrus.com"/>
@@ -436,12 +437,12 @@
       <input type="hidden" name="WMI_SIGNATURE" value=""/>
     </form>
 
-    <form id="RoboPaymentForm" target="_newtab" method="post" action="http://test.robokassa.ru/Index.aspx" accept-charset="UTF-8">
-      <input type="hidden" name="MrchLogin" value="zavrus" />
-      <input type="hidden" name="InvId" value="" />
-      <input type="hidden" name="Desc" value="Оплата ключа доступа zavrus.com" />
-      <input type="hidden" name="SignatureValue" value="" />
-      <input type="hidden" name="OutSum" value="">
+    <form id="RoboPaymentForm" target="_newtab" method="get" action="https://auth.robokassa.ru/Merchant/Index.aspx" accept-charset="UTF-8">
+      <input type="hidden" name="MrchLogin" value="Test1999" />
+      <input type="hidden" name="OutSum" value="100">
+      <input type="hidden" name="InvId" value="1" />
+      <input type="hidden" name="SignatureValue" value="061d7da048c2edd112c7632399e727c0" />
+      <input type="hidden" name="IsTest" value="1">
     </form>
 
     <div class="unlock-screen hidden">
@@ -514,14 +515,14 @@
           <button class="btn btn-default pull-right">Далее</button>
         </form>
       </div>
-    </div>    
+    </div>
 
     <div class="get-key-screen key-screen hidden">
       <button type="button" class="close"><span aria-hidden="true">&times;</span></button>
       <div class="get-key-screen-container" style="padding: 45px 15px 15px;">
         <form role="form" id="keyForm" style="color: #fff">
           <div class="form-group">
-            <label for="InputKey" style="color: #dadada;">Введите ключ, полученны по e-mail:</label>
+            <label for="InputKey" style="color: #dadada;">Введите ключ, полученный по e-mail:</label>
             <input type="text" class="form-control" id="InputKey" placeholder="введите ключ" style="opacity: 0.8;">
           </div>
           <span class="screen-message pull-left text-danger hidden"></span>
@@ -553,7 +554,7 @@
           % } else {
             <li><a href="/info" class="icon-info"></a></li> 
           % }
-          <li style="position: absolute; right: 0px;"><a href="#" class="icon-lock unlock-screen-opener"></a></li> 
+            <li style="position: absolute; right: 0px;"><a href="#" class="icon-lock closed unlock-screen-opener"></a></li> 
         </ul> 
       </div>
     </div>
@@ -590,26 +591,29 @@
 
       $(document)
         .ajaxStart(function () {
-          $('.disable-on-ajax').addClass('disabled'); 
+          $('.disable-on-ajax').addClass('disabled');
           $('.ajax-indicator').removeClass('hidden');
         })
         .ajaxStop(function () {
-          $('.disable-on-ajax').removeClass('disabled'); 
+          $('.disable-on-ajax').removeClass('disabled');
           $('.ajax-indicator').addClass('hidden');
         })
       ;
 
       $(function () {
         $(document).on('click', 'a[href="#"]', function (event) { event.preventDefault(); });
+
       });
 
       $(function () {
+
         $.ajax({
           type: "POST",
           url: "/api/user/check_session",
           data: {},
         })
         .done(function (data, textStatus, jqXHR) {
+
           if (data.result == 'login') {
             LOCKED = 0;
             EMAIL = data.email;
@@ -621,6 +625,7 @@
       });
 
       //if (!window.Zavrus) { window.Zavrus = {}; }
+
       window.Zavrus = {
         isLocked: function () {
           return LOCKED;
@@ -676,17 +681,18 @@
                   }
                 }
               });
+
               $('.unlock-screen').addClass('hidden');
               location.reload();
               // вывести e-mail и оставшееся время
             } else {
               $('.screen-message').text('Неверный ключ');
-              $('.screen-message').removeClass('hidden');              
+              $('.screen-message').removeClass('hidden');
             }
           })
           .fail(function (jqXHR, textStatus, errorThrown) {
             $('.screen-message').text('Произошла ошибка...');
-            $('.screen-message').removeClass('hidden');            
+            $('.screen-message').removeClass('hidden');
           });
 
           $('.key-screen').addClass('hidden');
@@ -735,12 +741,12 @@
               $('.key-pay-screen').removeClass('hidden');
             } else {
               $('.screen-message').text('Неверный код');
-              $('.screen-message').removeClass('hidden');              
+              $('.screen-message').removeClass('hidden');
             }
           })
           .fail(function (jqXHR, textStatus, errorThrown) {
             $('.screen-message').text('Произошла ошибка...');
-            $('.screen-message').removeClass('hidden');            
+            $('.screen-message').removeClass('hidden');
           });
 
         } else if ($(this).attr('id') == 'keyPayForm') {
@@ -755,9 +761,9 @@
               data: {email: email},
             })
             .done(function (data, textStatus, jqXHR) {
-              $("#RoboPaymentForm [name='InvId']").val(data.inv_id);
-              $("#RoboPaymentForm [name='SignatureValue']").val(data.crc);
-              $("#RoboPaymentForm [name='OutSum']").val(data.out_sum);
+              //$("#RoboPaymentForm [name='InvId']").val(data.inv_id);
+              //$("#RoboPaymentForm [name='SignatureValue']").val(data.crc);
+              //$("#RoboPaymentForm [name='OutSum']").val(data.out_sum);
 
               $('.key-pay-screen').addClass('hidden');
               $('.key-screen').removeClass('hidden');
@@ -797,7 +803,7 @@
 
         } else if ($(this).attr('id') == 'keyForm') {
           var email = $('#InputEmail').val();
-          var access_key = $('#InputKey').val();         
+          var access_key = $('#InputKey').val();
           if (!access_key || !email) {
             $('.screen-message').text('Ключ не введен');
             $('.screen-message').removeClass('hidden');
@@ -827,7 +833,7 @@
                 }
               });
               $('.key-screen').addClass('hidden');
-              location.reload();              
+              location.reload();
             } else {
               $('.screen-message').text('Неверный ключ');
               $('.screen-message').removeClass('hidden');
@@ -843,12 +849,15 @@
       });
 
       $(document).on('click', '.unlock-screen-opener', function() {
-        return;
+
+        //return;
+
         if (LOCKED) {
           $('.screen-message').addClass('hidden');
           $('.get-key-screen').addClass('hidden');
           $('.unlock-screen').toggleClass('hidden');
         } else {
+
           $.ajax({
             type: "POST",
             url: "/api/user/lock",
@@ -866,14 +875,14 @@
           })
           .fail(function (jqXHR, textStatus, errorThrown) {
 
-          });          
+          });
         }
       });
 
       $('.close').click(function() {
         $('.screen-message').addClass('hidden');
         $('.unlock-screen').addClass('hidden');
-        $('.get-key-screen').addClass('hidden');        
+        $('.get-key-screen').addClass('hidden');
       });
 
       $('#userReg').click(function() {

@@ -2,16 +2,11 @@ package RplusWeb::Controller::API::Robokassa;
 
 use Digest::MD5 qw(md5_hex);
 use Mojo::Base 'Mojolicious::Controller';
-
+use utf8;
 use Rplus::Util::Email;
 
-use Rplus::Model::AccountsExt;
-use Rplus::Model::AccountsExt::Manager;
-use Rplus::Model::BillingExt;
-use Rplus::Model::BillingExt::Manager;
-
-my $mrch_login = "zavrus";
-my $mrch_pass1 = "password1";
+my $mrch_login = "Test1999";
+my $mrch_pass1 = "password_1";
 my $mrch_pass2 = "password2";
 
 sub _generate_code {
@@ -20,7 +15,7 @@ sub _generate_code {
     my @chars = ("A".."Z", "0".."9");
     my $code;
     $code .= $chars[rand @chars] for 1..$sz;
-    
+
     return $code;
 }
 
@@ -29,27 +24,31 @@ sub prepare {
 
     my $email = $self->param('email');
 
-    my $sum = 99;
+    my $sum = 100;
 
-    my $account = Rplus::Model::AccountsExt::Manager->get_objects(query => [email => $email])->[0];
-    return $self->render(json => {result => 'fail', reason => 'account not found'}) unless $account;
+    my $sqlite = DBI->connect('dbi:SQLite:dbname=zavrus.db;','','',{RaiseError=>1},)
+    or die die $DBI::errstr;
 
-    my $bill = Rplus::Model::BillingExt->new;
-    $bill->account_id($account->id);
-    $bill->sum($sum);
-    $bill->state(0);
-    $bill->provider('robokassa');
-    $bill->save(insert => 1);
+    my $sth = $sqlite->prepare( "SELECT id FROM accounts WHERE email = '$email';" );
+    $sth->execute();
+    my $id = $sth->fetchrow();
+    return $self->render(json => {result => 'fail', reason => 'account not found'}) unless $id;
 
-    my $inv_id = $bill->{id};
-    my $crc = md5_hex("$mrch_login:$sum:$inv_id:$mrch_pass1");
-    
+    $sqlite->do( "INSERT INTO billing (account_id, sum, state, provider) VALUES ( '$id', '$sum', 0, 'robokassa' );" );
+
+    $sth = $sqlite->prepare( "SELECT id FROM billing WHERE account_id = '$id' AND sum = '$sum' AND state = 0 AND  provider= 'robokassa';" );
+    $sth->execute();
+    my $bilId = 1;
+
+    my $crc = md5_hex("$mrch_login:$sum:$bilId:$mrch_pass1");
+
     my $res = {
         result => 'ok',
-        inv_id => $inv_id,
+        inv_id => $bilId,
         out_sum => $sum,
         crc => $crc,
     };
+
 
     return $self->render(json => $res);
 }
@@ -74,10 +73,10 @@ sub result {
 
     # проверим сумму
     if($bill->sum != $summ) {
-        return $self->render(text => 'FAIL');   
+        return $self->render(text => 'FAIL');
     }
 
-    my $account = Rplus::Model::AccountsExt::Manager->get_objects(query => [id => $bill->{'account_id'}])->[0];
+    my $account = Rplus::Model::ZavrusAccount::Manager->get_objects(query => [id => $bill->{'account_id'}])->[0];
     if (!$account) {
         return $self->render(text => 'FAIL');
     }
@@ -118,13 +117,13 @@ sub success {
     }
 
     my $bill = Rplus::Model::BillingExt::Manager->get_objects(query => [id => $inv_id])->[0];
-    # проверим 
+    # проверим
     if(!$bill) {
         $self->flash(show_message => 1, message => "Не найден счет. Обратитесь в службу поддержки.");
         return $self->redirect_to('/');
     }
 
-    my $account = Rplus::Model::AccountsExt::Manager->get_objects(query => [id => $bill->account_id])->[0];
+    my $account = Rplus::Model::ZavrusAccount::Manager->get_objects(query => [id => $bill->account_id])->[0];
     if (!$account) {
         $self->flash(show_message => 1, message => "Не найдена учетная запись. Обратитесь в службу поддержки.");
     }
@@ -138,13 +137,13 @@ sub fail {
 
     my $inv_id = $self->param('InvId');
     my $sum = $self->param('OutSum');
-    
+
     my $bill = Rplus::Model::BillingExt::Manager->get_objects(query => [id => $inv_id])->[0];
     if ($bill) {
         $bill->state(2);    # state fail
         $bill->save(changes_only => 1);
     }
-    
+
     $self->flash(show_message => 1, message => 'Платеж отменен.');
     return $self->redirect_to('/');
 }

@@ -7,11 +7,6 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use Rplus::Util::Email;
 
-use Rplus::Model::AccountsExt;
-use Rplus::Model::AccountsExt::Manager;
-use Rplus::Model::BillingExt;
-use Rplus::Model::BillingExt::Manager;
-
 my $secret_key = "373268624b446f335b4537356434743363594a756b767634573662";
 
 sub _generate_code {
@@ -20,7 +15,7 @@ sub _generate_code {
     my @chars = ("A".."Z", "0".."9");
     my $code;
     $code .= $chars[rand @chars] for 1..$sz;
-    
+
     return $code;
 }
 
@@ -29,22 +24,25 @@ sub prepare {
 
     my $email = $self->param('email');
 
-    my $sum = 99;
+    my $sum = 99.00;
 
-    my $account = Rplus::Model::AccountsExt::Manager->get_objects(query => [email => $email])->[0];
-    return $self->render(json => {result => 'fail', reason => 'account not found'}) unless $account;
+    my $sqlite = DBI->connect('dbi:SQLite:dbname=zavrus.db;','','',{RaiseError=>1},)
+    or die die $DBI::errstr;
 
-    my $bill = Rplus::Model::BillingExt->new;
-    $bill->account_id($account->id);
-    $bill->sum($sum);
-    $bill->state(0);
-    $bill->provider('walletone');
-    $bill->save(insert => 1);
-    
-    my $inv_id = $bill->{id};    
+    my $sth = $sqlite->prepare( "SELECT id FROM accounts WHERE email = '$email';" );
+    $sth->execute();
+    my $id = $sth->fetchrow();
+    return $self->render(json => {result => 'fail', reason => 'account not found'}) unless $id;
+
+    $sqlite->do( "INSERT INTO billing (account_id, sum, state, provider) VALUES ( '$id', '$sum', 0, 'walletone' );" );
+
+    $sth = $sqlite->prepare( "SELECT id FROM billing WHERE account_id = '$id' AND sum = '$sum' AND state = 0 AND  provider= 'walletone';" );
+    $sth->execute();
+
+    my $inv_id = $sth->fetchrow();
     my $success_url = "http://zavrus.com/api/walletone/success?InvId=$inv_id&OutSum=$sum";
     my $fail_url = "http://zavrus.com/api/walletone/fail?InvId=$inv_id";
-     
+
     my %fields;
 
     $fields{"WMI_MERCHANT_ID"}    = "190508019929";
@@ -54,14 +52,14 @@ sub prepare {
     $fields{"WMI_DESCRIPTION"}    = encode_base64(encode('UTF-8','zavrus.com Оплата ключа доступа.'), "");
     $fields{"WMI_SUCCESS_URL"}    = $success_url;
     $fields{"WMI_FAIL_URL"}       = $fail_url;
-     
+
     my $fieldValues = "";
-     
+
     for my $key (sort { lc($a) cmp lc($b) } keys %fields)
     {
       $fieldValues .= $fields{$key};
     }
-     
+
     my $signature = md5_base64(encode('cp1251', $fieldValues . $secret_key)) . '==';
 
 
@@ -126,7 +124,7 @@ sub success {
     my $sum = $self->param('OutSum');
 
     my $bill = Rplus::Model::BillingExt::Manager->get_objects(query => [id => $inv_id])->[0];
-    # проверим 
+    # проверим
     if(!$bill) {
         $self->flash(show_message => 1, message => "Не найден счет. Обратитесь в службу поддержки.");
         return $self->redirect_to('/cabinet');
@@ -145,13 +143,13 @@ sub fail {
     my $self = shift;
 
     my $inv_id = $self->param('InvId');
-    
+
     my $bill = Rplus::Model::BillingExt::Manager->get_objects(query => [id => $inv_id])->[0];
     if ($bill) {
         $bill->state(2);    # state fail
         $bill->save(changes_only => 1);
     }
-    
+
     $self->flash(show_message => 1, message => 'Платеж не принят');
     return $self->redirect_to('/cabinet');
 }

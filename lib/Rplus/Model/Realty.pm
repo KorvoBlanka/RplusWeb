@@ -57,7 +57,6 @@ __PACKAGE__->meta->setup(
         geocoords           => { type => 'geography', remarks => 'Географические координаты' },
         sublandmark_id      => { type => 'integer', remarks => 'Подориентир' },
         landmarks           => { type => 'array', default => '{}', not_null => 1, remarks => 'Ориентиры, в которые попадает объект' },
-        tags                => { type => 'array', default => '{}', not_null => 1, remarks => 'Теги' },
         export_media        => { type => 'array', default => '{}', not_null => 1, remarks => 'В какие источники экспортировать недвижимость (объявления)' },
         metadata            => { type => 'scalar', default => '{}', not_null => 1, remarks => 'Метаданные' },
         fts                 => { type => 'scalar', remarks => 'tsvector описания' },
@@ -68,6 +67,18 @@ __PACKAGE__->meta->setup(
         account_id          => { type => 'integer' },
         hidden_for          => { type => 'array', default => '{}', not_null => 1, remarks => 'ID аккаунтов, для которых не будет виден объект' },
         multylisting        => { type => 'boolean', default => 'false', not_null => 1 },
+        mls_price_type      => { type => 'varchar', default => 'rub', length => 255, not_null => 1 },
+        mls_price           => { type => 'float', scale => 4 },
+        attachments         => { type => 'array', default => '{}', not_null => 1 },
+        rent_type           => { type => 'varchar', default => 'long', length => 8, not_null => 1 },
+        lease_deposite_id   => { type => 'integer' },
+        fts_vector          => { type => 'scalar' },
+        district            => { type => 'varchar' },
+        poi                 => { type => 'varchar' },
+        pois                => { type => 'array' },
+        address             => { type => 'varchar' },
+        locality            => { type => 'varchar' },
+        color_tag           => { type => 'array' },
     ],
 
     primary_key_columns => [ 'id' ],
@@ -178,6 +189,13 @@ __PACKAGE__->meta->setup(
             class      => 'Rplus::Model::Photo',
             column_map => { id => 'realty_id' },
             type       => 'one to many',
+        },
+
+        realty_color_tag => {
+            class                => 'Rplus::Model::RealtyColorTag',
+            column_map           => { id => 'realty_id' },
+            type                 => 'one to one',
+            with_column_triggers => '0',
         },
 
         subscription_realty => {

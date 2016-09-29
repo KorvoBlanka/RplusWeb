@@ -6,11 +6,12 @@
 % use Rplus::Model::Realty::Manager;
 % use Rplus::Model::Photo::Manager;
 % use Scalar::Util qw(looks_like_number);
+% use Data::Dumper;
 
 % my $realty;
 % if (looks_like_number($self->stash('realty_id'))) {
 %   $realty = Rplus::Model::Realty::Manager->get_objects(
-%      query => [id => $self->stash('realty_id'), state_code => 'work'],
+%      query => [id => $self->stash('realty_id'), state_code => 'raw'],
 %      require_objects => ['type', 'offer_type'],
 %      with_objects => ['address_object', 'sublandmark', 'ap_scheme', 'house_type', 'room_scheme', 'condition', 'balcony', 'bathroom', 'agent'],
 %   )->[0];
@@ -25,34 +26,40 @@
 % my $title;
 % my $photo;
 % if ($realty) {
-%   $id = $realty->id;
-%   $street = '';
-%   $area = '';
-%   if ($realty->address_object_id) {
-%     my $ap = from_json($realty->address_object->metadata)->{'addr_parts'};
-%     $street = $ap->[0]->{'name'}.($ap->[0]->{'short_type'} ne 'ул' ? ' '.$ap->[0]->{'full_type'} : '');
-%     if ($realty->house_num) {
-%          $street .= ', ' . $realty->house_num; 
+%   $id = $realty->{id};
+%   my $street = '';
+%   my $locality = '';
+%   my $district = '';
+%   if ($realty->{address}) {
+%     $street = ', '.$realty->{address};
+%     if ($realty->{house_num}) {
+%          $street .= ', ' . $realty->{house_num};
 %     }
 %   }
-%   if ($realty->sublandmark_id) {
-%     $area = $realty->sublandmark->name;
+%   if ($realty->{locality}) {
+%     $locality = ', '.$realty->{locality};
 %   }
+%   if ($realty->{district}) {
+%     $district = ', '.$realty->{district};
+%   }
+%   $area = $locality.$district.$street;
+%
+%
 %   $rooms = '?';
-%   if ($realty->rooms_offer_count) {
-%     $rooms = $realty->rooms_offer_count;
-%     if ($realty->rooms_count) {
-%       $rooms .= ' из ' . $realty->rooms_count;
+%   if ($realty->{rooms_offer_count}) {
+%     $rooms = $realty->{rooms_offer_count};
+%     if ($realty->{rooms_count}) {
+%       $rooms .= ' из ' . $realty->{rooms_count};
 %     }
 %   } else {
-%     if ($realty->rooms_count) {
-%       $rooms = $realty->rooms_count;
+%     if ($realty->{rooms_count}) {
+%       $rooms = $realty->{rooms_count};
 %     }
 %   }
-%   $squares = join('/', $realty->square_total || (), $realty->square_living || (), $realty->square_kitchen || ()).' м²' if $realty->square_total || $realty->square_living || $realty->square_kitchen;
-%   $squares_land = $realty->square_land.($realty->square_land_type || 'ar' eq 'ar' ? ' сот.' : ' га.') if $realty->square_land;
-%   $floors = join('/', $realty->floor || (), $realty->floors_count || ()) if $realty->floor || $realty->floors_count;
-%   $title =  $realty->type->name . ', ' . $street . ($area ? (' (' . $area . ')') : '');
+%   $squares = join('/', $realty->{square_total} || (), $realty->{square_living} || (), $realty->{square_kitchen} || ()).' м²' if $realty->{square_total} || $realty->{square_living} || $realty->{square_kitchen};
+%   $squares_land = $realty->{square_land}.($realty->{square_land_type} || 'ar' eq 'ar' ? ' сот.' : ' га.') if $realty->{square_land};
+%   $floors = join('/', $realty->{floor} || (), $realty->{floors_count} || ()) if $realty->{floor} || $realty->{floors_count};
+%   $title =  $realty->{type}->{name} .$area;
 %   $photo = Rplus::Model::Photo::Manager->get_objects(query => [realty_id => $id, delete_date => undef], sort_by => 'is_main DESC, id ASC')->[0];
 % }
 
@@ -73,15 +80,15 @@
   }
 
   .rm-realty-screen {
-    border-radius: 4px; 
-    position: fixed; 
-    width: 360px; 
-    top: 50%; 
-    left: 50%; 
-    margin-top: -85px; 
-    margin-left: -180px; 
+    border-radius: 4px;
+    position: fixed;
+    width: 360px;
+    top: 50%;
+    left: 50%;
+    margin-top: -85px;
+    margin-left: -180px;
     padding-bottom: 10px;
-    background-color: rgba(6,33,66,0.9); 
+    background-color: rgba(6,33,66,0.9);
     z-index: 1010;
     font-size: 16px;
   }
@@ -166,12 +173,12 @@
   }
 
   .bg-block {
-    position: absolute; 
-    left: 0px; 
-    width: 100%; 
-    margin-top: 3px;    
+    position: absolute;
+    left: 0px;
+    width: 100%;
+    margin-top: 3px;
     height: 420px;
-    background-image: url(<%= $photo ? $photo->filename : ''; %>);
+    background-image: url(<%= $photo ? $photo->{filename} : ''; %>);
     background-size: cover;
   }
 
@@ -212,12 +219,12 @@
 
     var obj = {
       % if ($realty) {
-      id: <%= $realty->id %>,
-      type: '<%= $realty->type->name %>',
-      photo: '<%= $photo ? $photo->filename : ""%>',
-      rooms_count: <%=  $realty->rooms_count %>,
-      floors: <%=  $realty->floor %>,
-      price: <%=  $realty->price %>,
+      id: <%= $realty->{id} %>,
+      type: '<%= $realty->{type}->{name} %>',
+      photo: '<%= $photo ? $photo->{filename} : ""%>',
+      rooms_count: '<%=  $rooms %>',
+      floors: '<%=  $realty->{floor} %>',
+      price: <%=  $realty->{price} %>,
       street: '<%= $street %>',
       area: '<%= $area %>',
       % }
@@ -231,7 +238,7 @@
       } else {
         abuses = {};
       }
-      return abuses;      
+      return abuses;
     }
 
     function isAbused(realty_id) {
@@ -345,20 +352,25 @@
 
     $('#closeRmRealtyScreen').click(function () {
       $('.rm-realty-screen').addClass('hidden');
-    });    
+    });
 
     $('.show-contacts').click(function () {
+    % if($self->session->{'user'}) {
       var xhtml = '';
       xhtml += '<a href="#" class="" style="text-decoration: none !important; display: block; text-align: center;">';
       xhtml +=   '<div class="realty-obj-header" style="display: inline-block;">';
       xhtml +=      '<span class="label label-danger" style="display: block; border-radius: 0px; font-size: 22px; font-weight: 200; letter-spacing: 0.5px; padding-top: 10px;">Телефон: ';
-      % foreach ($realty->owner_phones) {
+      % foreach (@{$realty->{owner_phones}}) {
       xhtml +=           '8<%= format_phone_num($_, "4212") %>';
       %}
       xhtml +=     '</span>';
       xhtml +=   '</div>';
       xhtml += '</a>';
       $('.show-contacts').replaceWith(xhtml);
+    %} else{
+      $('.unlock-screen').toggleClass('hidden');
+
+    %}
     });
 
     $('#removeRealty').click(function () {
@@ -403,7 +415,7 @@
           });
 
         }
-      });      
+      });
 
     });
 
@@ -488,7 +500,7 @@
 
   <div class="page-header container">
     <div class="col-lg-10 col-md-9 col-sm-9"><span style="font-size: 26px; font-weight: 200; display: block; margin-top: 5px; margin-bottom: 10px;"><%= $title %></span></div>
-    <div class="col-lg-2 col-md-3 col-sm-3"><span class="label label-price pull-right" style="font-size: 22px; font-weight: 200; display: block; margin-top: 2px; padding-top: 8px;"><%= $realty->price %> тыс. руб.</span></div>
+    <div class="col-lg-2 col-md-3 col-sm-3"><span class="label label-price pull-right" style="font-size: 22px; font-weight: 200; display: block; margin-top: 2px; padding-top: 8px;"><%= $realty->{price} %> тыс. руб.</span></div>
   </div>
 
   <div class="carousel-block">
@@ -498,37 +510,38 @@
       <div id="carousel">
       % my $photo_iter = Rplus::Model::Photo::Manager->get_objects_iterator(query => [realty_id => $id, delete_date => undef], sort_by => 'is_main DESC, id ASC');
       % while (my $photo = $photo_iter->next) {
-        <img class="carousel-img" src="<%= $photo->filename %>" style="height: 420px; float: left;">
+        <img class="carousel-img" src="<%= $photo->{filename} %>" style="height: 420px; float: left;">
       % }
       </div>
       <a class="slide-prev photo-slide-prev icon-left" href="#" style="display: block;"></a>
       <a class="slide-next photo-slide-next icon-right" href="#" style="display: block;"></a>
-    </div>    
+    </div>
   </div>
 
   <div class="container" style="padding-top: 15px; padding-bottom: 50px;">
     <p class="realty-obj-label"><span class="text-muted">Этаж:</span> <%= $floors %></p>
     <p class="realty-obj-label"><span class="text-muted">Комнат:</span> <%= $rooms %></p>
     <p class="realty-obj-label"><span class="text-muted">Площадь:</span> <%= $squares %></p>
-    <p class="realty-obj-label"><span class="text-muted">Описание:</span> <%= $realty->description %></p>
+    <p class="realty-obj-label"><span class="text-muted">Описание:</span> <%= $realty->{description} %></p>
     <hr class="featurette-divider">
     <div class="col-lg-2 col-md-3" style="margin-bottom: 20px; min-height: 24px;">
-      % if ($realty->latitude && $realty->longitude) {
-      <div class="abtn map-div" data-annotation="Показать на карте" data-lat="<%= $realty->latitude %>" data-lon="<%= $realty->longitude %>"><a href="#" class="map-btn"><span class="glyphicon glyphicon-globe"></span></a></div>
+      % if ($realty->{latitude} && $realty->{longitude}) {
+      <div class="abtn map-div" data-annotation="Показать на карте" data-lat="<%= $realty->{latitude} %>" data-lon="<%= $realty->{longitude} %>"><a href="#" class="map-btn"><span class="glyphicon glyphicon-globe"></span></a></div>
       % }
       <div class="abtn fav-div"><span class="glyphicon glyphicon-start"></span></a></div>
       <div class="abtn abuse-div"><span class="glyphicon glyphicon-thumbs-down"></span></a></div>
       <div class="abtn" data-annotation="Удалить"><a href="#" class="rm-btn"><span class="glyphicon glyphicon-trash"></span></a></div>
     </div>
     <div class="offset-lg-2 col-lg-8 offset-md-3 col-md-6">
-    %# if($self->session->{'user'}) {
-    % if(1 == 2) {
+    % if($self->session->{'user'}) {
+    % #if(1 == 2) {
     <a href="#" class="" style="text-decoration: none !important; display: block; text-align: center;">
       <div class="realty-obj-header" style="display: inline-block;">
-        <span class="label label-danger" style="display: block; border-radius: 0px; font-size: 22px; font-weight: 200; letter-spacing: 0.5px; padding-top: 10px;">Телефон: 
-        % foreach ($realty->owner_phones) {
-        8<%= format_phone_num($_, '4212') %>
-        %}          
+        <span class="label label-danger" style="display: block; border-radius: 0px; font-size: 22px; font-weight: 200; letter-spacing: 0.5px; padding-top: 10px;">Телефон:
+        % foreach ($realty->{owner_phones}) {
+        % say $_;
+        8<%= $_ %>
+        %}
         </span>
       </div>
     </a>

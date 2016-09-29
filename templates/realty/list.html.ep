@@ -19,14 +19,14 @@
   }
 
   .side-panel {
-    position: fixed; 
-    top: 0px; 
-    width: 320px; 
-    height: 100%; 
+    position: fixed;
+    top: 0px;
+    width: 320px;
+    height: 100%;
     background-color: rgba(6,33,66,0.95);
     color: #dadada;
-    overflow: auto; 
-    overflow-y: auto; 
+    overflow: auto;
+    overflow-y: auto;
     z-index: 1001;
 
     left: -318px;
@@ -35,7 +35,7 @@
   }
 
   .side-panel.opened {
-    left: 0px;    
+    left: 0px;
   }
 
   .panel-body {
@@ -43,7 +43,7 @@
   }
 
   .fav-screen .panel-body {
-    background-color: rgba(0,0,0,0.05);    
+    background-color: rgba(0,0,0,0.05);
   }
 
   .fav-screen {
@@ -82,7 +82,7 @@
       position: relative;
       min-height: 1px;
       padding-right: 15px;
-      padding-left: 15px;    
+      padding-left: 15px;
     }
   }
 
@@ -116,11 +116,11 @@
   .slider_block:hover > .slide-prev, .slider_block:hover > .slide-next {
     opacity: 0.4;
   }
-  
+
   .slide-prev > span, .slide-next > span {
     padding-top: 27px;
   }
-  
+
   .slide-next {
     right: 0px;
   }
@@ -141,7 +141,7 @@
     top: 0px;
     width: 22px;
     height: 22px;
-    padding-left: 4px; 
+    padding-left: 4px;
     padding-top: 3px;
     color: #aaa;
     opacity: 0;
@@ -157,9 +157,9 @@
 
   .realty-tile-overlay {
     position: relative;
-    padding-left: 3px; 
-    display: block; 
-    float: left; 
+    padding-left: 3px;
+    display: block;
+    float: left;
   }
 
   .realty-tile-overlay:hover .realty-tile {
@@ -202,14 +202,14 @@
   }
 
   .text-small {
-    margin: 0; 
+    margin: 0;
     font-size: 11px;
     font-weight: 400;
     color: #aaa;
   }
 
   .text-mdl {
-    margin: 0; 
+    margin: 0;
     font-size: 14px;
     font-weight: 200;
     color: #aaa;
@@ -231,7 +231,7 @@
     border-radius: 0;
     margin-bottom: 0px;
     cursor: pointer;
-    position: relative;    
+    position: relative;
   }
 
   .panel-body > .sticker-block {
@@ -247,7 +247,7 @@
     top: -3px;
     background-color: #d9534f;
     color: #eee;
-    z-index: 3;    
+    z-index: 3;
   }
 
   .tstamp-sticker {
@@ -341,10 +341,10 @@ $(function () {
   {
       var sPageURL = window.location.search.substring(1);
       var sURLVariables = sPageURL.split('&');
-      for (var i = 0; i < sURLVariables.length; i++) 
+      for (var i = 0; i < sURLVariables.length; i++)
       {
           var sParameterName = sURLVariables[i].split('=');
-          if (sParameterName[0] == sParam) 
+          if (sParameterName[0] == sParam)
           {
               return sParameterName[1];
           }
@@ -358,7 +358,7 @@ $(function () {
 
   $('.search-button').click(function (e) {
     listRealty(1);
-  });    
+  });
 
   var f = 0;
   function setRNumber(num) {
@@ -475,7 +475,7 @@ $(function () {
             xhtml += '      <div class="" style="height: 210px;"></div>';
           }
           xhtml += '        <span class="price-sticker text-easy">' + type + '&nbsp;&nbsp;&nbsp;' + price + ' тыс. руб.</span>';
-          xhtml += '        <span class="tstamp-sticker text-easy-ns">' + moment(r.change_date).format("DD.MM.YYYY HH:mm") + '</span>';            
+          xhtml += '        <span class="tstamp-sticker text-easy-ns">' + moment(r.change_date).format("DD.MM.YYYY HH:mm") + '</span>';
           xhtml += '      </div>';
           xhtml += '      <div class="col-sm-12 col-xs-12 " style="padding-left: 0px;">';
           xhtml += '        <p class="text-small">Комнат: <span class="a-val">' + rooms + '</span> ' + 'Этаж: <span class="a-val">' + floors + '</span></p>';
@@ -533,7 +533,7 @@ $(function () {
         xhtml += ' <a class="del-btn unfav-btn" data-id="' + r.id + '" href="#"><span class="glyphicon glyphicon-remove"></span></a>';
         xhtml += ' <a href="/show/' + r.id + '" style="text-decoration: none !important;">';
         xhtml += '  <div class="panel panel-default panel-sm highlight realty-tile" data-id="' + r.id + '"" style="border-radius: 0; margin-bottom: 0px; cursor: pointer; position: relative;">';
-        xhtml += '    <div class="panel-overlay"></div>';          
+        xhtml += '    <div class="panel-overlay"></div>';
         xhtml += '    <div class="panel-body">';
         xhtml += '      <div class="row">';
         xhtml += '        <div class="col-sm-5 col-xs-5" style="width: 100px;">';
@@ -560,7 +560,7 @@ $(function () {
         xhtml += '  </div>';
         xhtml += ' </a>';
         xhtml += '</div>';
-        
+
       }
       xhtml += '</div>';
       xhtml += '<a class="slide-prev fav-slide-prev icon-left" style="color: white;" href="#"></a>';
@@ -699,7 +699,7 @@ $(function () {
     listRealty(1);
   });
 
-  $('#backToTop').click(function (e) { 
+  $('#backToTop').click(function (e) {
     $("html, body").animate({
       scrollTop: 0,
     }, 800);
@@ -877,7 +877,7 @@ $(function () {
       <li style="height: 30px; /*margin-right: 17px;*/ float: left; font-size: 13px; line-height: 30px;">
         <a class="js-order" href="#" rel="price">по цене</a>
       </li>
-    </ul>  
+    </ul>
     <div class="tile-container">
     </div>
   </div>

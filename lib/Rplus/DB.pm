@@ -10,7 +10,7 @@ __PACKAGE__->register_db(
     domain   => 'development',
     type     => 'main',
     driver   => 'Pg',
-    database => 'rplus_dev_raven',
+    database => 'rplus_dev',
     host     => '127.0.0.1',
     port     => 5433,
     username => 'raven',
@@ -22,7 +22,6 @@ __PACKAGE__->register_db(
     pg_enable_utf8 => 1,
     post_connect_sql  => [
         "SET client_encoding TO 'UTF8'",
-        "SET enable_seqscan TO OFF",
         "SET search_path TO public,postgis",
     ]
 );

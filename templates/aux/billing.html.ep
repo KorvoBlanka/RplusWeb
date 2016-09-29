@@ -34,13 +34,13 @@
         % my $iter = Rplus::Model::BillingExt::Manager->get_objects_iterator(sort_by => 'id DESC');
         % while (my $x = $iter->next) {
           <tr>
-          <td><%= $x->id %></td>
-          <td><%= $x->date %></td>
-          %#<td><%= $x->account_id %></td>
-          <td><%= $x->account->email %></td>
-          <td><%= $x->sum %></td>
-          <td><%= $x->state %></td>
-          <td><%= $x->provider %></td>
+          <td><%= $x->{id} %></td>
+          <td><%= $x->{date} %></td>
+          %#<td><%= $x->{account_id} %></td>
+          <td><%= $x->{account}->{email} %></td>
+          <td><%= $x->{sum} %></td>
+          <td><%= $x->{state} %></td>
+          <td><%= $x->{provider} %></td>
           </tr>
         % }
 
