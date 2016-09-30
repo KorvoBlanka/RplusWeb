@@ -500,7 +500,7 @@
       <div class="get-key-screen-container" style="padding: 45px 15px 15px;">
         <form role="form" id="keyPayForm" style="color: #fff">
           <div class="form-group">
-            <label for="InputPaymentSystem" style="color: #dadada;">Выберите платежную систему. Стоимость ключа - <%= $sum %> рублей. Ключ будет отправлен на указанный вами e-mail:</label>
+            <label for="InputPaymentSystem" style="color: #dadada;">Выберите платежную систему. Стоимость ключа - <%= $sum %> рублей в сутки. Ключ будет отправлен на указанный вами e-mail:</label>
             <div class="radio">
               <label>
                 <input type="radio" name="optionPaymentSystem" id="optionsPaymentSystem1" value="robokassa" disabled>
