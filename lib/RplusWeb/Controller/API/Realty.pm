@@ -56,6 +56,7 @@ sub list {
     my @query = (
         state_code => 'work',
         offer_type_code => $offer_type_code,
+        account_id => 4,
         ($type_code ? (type_code => $type_code) : ()),
         ($district ? (district => $district) : ()),
         ($rooms_count ? ($rooms_count =~ /^\d$/ ? ($rooms_count <= 4 ? (rooms_count => $rooms_count) : (rooms_count => {ge => 5})) : ()) : ()),
