@@ -1,5 +1,7 @@
 % layout 'default';
-
+% use Rplus::Util::Config;
+% my $config = Rplus::Util::Config::get_config();
+% my $sum = $config->{day_pay};
 % use JSON;
 
 % content_for header => begin
@@ -7,7 +9,7 @@
 
   .intro-top {
   padding: 0px 0 50px 0;
-  text-align: center;    
+  text-align: center;
   }
 
   .intro-1 h2 span {
@@ -22,7 +24,7 @@
     display: block;
     background-position: center;
     background-size: cover;
-    background-repeat: no-repeat;    
+    background-repeat: no-repeat;
   }
 
   .icon1 {
@@ -55,7 +57,7 @@
     background-image: url(http://thelocals.ru/assets/sprites-sd0efa0f2be-420e9158fd80ea18e0ec6464d06fd65c.png);
     background-position: 0 -2346px;
     background-repeat: no-repeat;
-    background-size: initial;  
+    background-size: initial;
   }
 
   .icon6 {
@@ -122,10 +124,8 @@
         Платный доступ
         </h4>
         <p>
-        Доступ к контактам платный, цена составляет 99 рублей за сутки и не зависит от количества просмотренных объектов.
+        Доступ к контактам платный, цена составляет <%= $sum %> рублей за сутки и не зависит от количества просмотренных объектов.
         </p>
-        <div style="position: absolute; top: 0px; left: -10px; width: 100%; height: 230px; background-image: url(/img/0ru.png); background-size: contain; background-repeat: no-repeat;">
-        </div>
       </div>
       <div class="col-lg-3 col-md-3 col-sm-3">
         <i class="icon icon3"></i>
@@ -152,7 +152,7 @@
     <div class="container">
       <div class="col-lg-offset-4 col-lg-4 col-md-4 col-sm-4" style="height: 50px; background-color: #f00;">
       </div>
-    </div>  
+    </div>
   </div>
 
   <div class="row" style="margin-top: 50px; padding-bottom: 50px; color: #eee; background-color: #525252;">

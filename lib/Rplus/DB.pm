@@ -10,7 +10,7 @@ __PACKAGE__->register_db(
     domain   => 'development',
     type     => 'main',
     driver   => 'Pg',
-    database => 'rplus_dev',
+    database => 'rplus_khv_prod',
     host     => '127.0.0.1',
     port     => 5433,
     username => 'raven',
