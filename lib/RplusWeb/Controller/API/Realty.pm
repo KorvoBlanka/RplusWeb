@@ -54,7 +54,7 @@ sub list {
     $sort_by_q = 'price ASC' if ($sort_by eq 'price');
 
     my @query = (
-        state_code => 'raw',
+        state_code => 'work',
         offer_type_code => $offer_type_code,
         ($type_code ? (type_code => $type_code) : ()),
         ($district ? (district => $district) : ()),
@@ -256,7 +256,7 @@ sub remove {
         ])->[0];
     return $self->render(json => {result => 'fail', reason => 'realty_not_found'}) unless $realty;
 
-    $realty->state_code('raw');
+    $realty->state_code('work');
     $realty->work_info($realty->work_info . ' -УДАЛЕНО ПОЛЬЗОВАТЕЛЕМ-');
     $realty->save(changes_only => 1);
 
@@ -267,7 +267,7 @@ sub add {
     my $self = shift;
 
     my $offer_type_code = 'rent';
-    my $state_code = 'raw';
+    my $state_code = 'work';
     my $type_code = $self->param('type_code');
 
     my $rooms_count = $self->param('rooms_count') || undef;

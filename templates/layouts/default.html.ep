@@ -1,4 +1,7 @@
 % use Data::Dumper;
+% use Rplus::Util::Config;
+% my $config = Rplus::Util::Config::get_config();
+% my $sum = $config->{day_pay};
 <!DOCTYPE html>
 <html>
   <head>
@@ -427,8 +430,8 @@
   <body>
 
     <form id="WalletonePaymentForm" target="_newtab" method="post" action="https://www.walletone.com/checkout/default.aspx" accept-charset="UTF-8">
-      <input type="hidden" name="WMI_MERCHANT_ID" value="112664092580"/>
-      <input type="hidden" name="WMI_PAYMENT_AMOUNT" value="99.00"/>
+      <input type="hidden" name="WMI_MERCHANT_ID" value="160663547396"/>
+      <input type="hidden" name="WMI_PAYMENT_AMOUNT" value="<%= $sum %>"/>
       <input type="hidden" name="WMI_PAYMENT_NO" value=""/>
       <input type="hidden" name="WMI_CURRENCY_ID" value="643"/>
       <input type="hidden" name="WMI_DESCRIPTION" value="Оплата ключа доступа zavrus.com"/>

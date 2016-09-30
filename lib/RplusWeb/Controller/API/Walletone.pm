@@ -6,6 +6,7 @@ use Encode qw(encode);
 use Mojo::Base 'Mojolicious::Controller';
 
 use Rplus::Util::Email;
+use Rplus::Util::Config;
 
 my $secret_key = "373268624b446f335b4537356434743363594a756b767634573662";
 
@@ -24,7 +25,9 @@ sub prepare {
 
     my $email = $self->param('email');
 
-    my $sum = 99.00;
+    my $config = Rplus::Util::Config::get_config();
+
+    my $sum = $config->{day_pay};
 
     my $sqlite = DBI->connect('dbi:SQLite:dbname=zavrus.db;','','',{RaiseError=>1},)
     or die die $DBI::errstr;
@@ -45,7 +48,7 @@ sub prepare {
 
     my %fields;
 
-    $fields{"WMI_MERCHANT_ID"}    = "190508019929";
+    $fields{"WMI_MERCHANT_ID"}    = "160663547396";
     $fields{"WMI_PAYMENT_AMOUNT"} = $sum;
     $fields{"WMI_PAYMENT_NO"}     = $inv_id;
     $fields{"WMI_CURRENCY_ID"}    = "643";
@@ -75,15 +78,15 @@ sub prepare {
 }
 
 sub result {
+
     my $self = shift;
     my $signature = $self->param('WMI_SIGNATURE');
     my $inv_id = $self->param('WMI_PAYMENT_NO');
     my $sum = $self->param('WMI_PAYMENT_AMOUNT');
-
     my $sqlite = DBI->connect('dbi:SQLite:dbname=zavrus.db;','','',{RaiseError=>1},)
     or die die $DBI::errstr;
 
-    $sth = $sqlite->prepare( "SELECT * FROM billing WHERE account_id = '$inv_id';" );
+    my $sth = $sqlite->prepare( "SELECT * FROM billing WHERE id = '$inv_id';" );
     $sth->execute();
 
     my ( $fid, $finv_id, $fsum, $fstate, $fprovider) = $sth->fetchrow();
@@ -98,7 +101,7 @@ sub result {
         return $self->render(text => 'WMI_RESULT=RETRY&WMI_DESCRIPTION=wrong_sum');
     }
 
-    $sth = $sqlite->prepare( "SELECT id, email, balance FROM accounts WHERE id = '$finv_id';" );
+    $sth = $sqlite->prepare( "SELECT email, balance FROM accounts WHERE id = '$finv_id';" );
     $sth->execute();
     my ( $aemail, $abalance) = $sth->fetchrow();
 
@@ -108,18 +111,21 @@ sub result {
 
     $sqlite->do( "UPDATE billing SET state = 1 WHERE id = $fid;" );
 
-    my $balance = $abalance + $sum;
+
+    my $balance =  $sum+$abalance;
 
     my $dt = DateTime->now(time_zone=>'local');
     my $exp = $dt->add(days => 1);
+    my $format = DateTime::Format::Strptime->new(pattern => '%Y-%m-%d %H:%M:%S');
+    my $ndate= $format->format_datetime($exp);
 
     my $genercode = _generate_code(8);
-    $sqlite->do( "UPDATE accounts SET access_key = '$genercode', access_key_exp = '$exp' WHERE id = $finv_id;" );
+    $sqlite->do( "UPDATE accounts SET access_key = '$genercode', access_key_exp = '$ndate', balance = '$balance' WHERE id = $finv_id;" );
 
     my $subject = 'Ключ доступа';
     my $message = 'Ваш ключ на один день: ' .$genercode;
-
-    Rplus::Util::Email::send($account->email, $subject, $message);
+    say  $aemail;
+    Rplus::Util::Email::send($aemail, $subject, $message);
 
     return $self->render(text => 'WMI_RESULT=OK');
 }
@@ -133,14 +139,14 @@ sub success {
     my $sqlite = DBI->connect('dbi:SQLite:dbname=zavrus.db;','','',{RaiseError=>1},)
     or die die $DBI::errstr;
 
-    $sth = $sqlite->prepare( "SELECT account_id FROM billing WHERE account_id = '$inv_id';" );
+    my $sth = $sqlite->prepare( "SELECT account_id FROM billing WHERE id = '$inv_id';" );
     $sth->execute();
-    my ($id) = $sth->fetchrow();
+    my $id = $sth->fetchrow();
 
     # проверим
     if(!$id) {
         $self->flash(show_message => 1, message => "Не найден счет. Обратитесь в службу поддержки.");
-        return $self->redirect_to('/cabinet');
+        return $self->redirect_to('/');
     }
 
     $sth = $sqlite->prepare( "SELECT id FROM accounts WHERE id = '$id';" );
@@ -151,8 +157,10 @@ sub success {
         $self->flash(show_message => 1, message => "Не найдена учетная запись. Обратитесь в службу поддержки.");
     }
 
-    $self->flash(show_message => 1, message => 'Платеж успешно принят. На счет зачислено '. $sum . ' рублей');
-    return $self->redirect_to('/cabinet');
+    $self->flash(show_message => 1, message => 'Платеж успешно принят. На счет зачислено '. $sum . ' рублей.
+                      Пароль доступа отправлен на указанный вами электронный адрес');
+
+    return $self->redirect_to('/');
 }
 
 sub fail {
@@ -163,16 +171,16 @@ sub fail {
     my $sqlite = DBI->connect('dbi:SQLite:dbname=zavrus.db;','','',{RaiseError=>1},)
     or die die $DBI::errstr;
 
-    $sth = $sqlite->prepare( "SELECT id FROM billing WHERE id = '$inv_id';" );
+    my $sth = $sqlite->prepare( "SELECT id FROM billing WHERE id = '$inv_id';" );
     $sth->execute();
     my ($id) = $sth->fetchrow();
 
     if ($id) {
-        $sqlite->do( "UPDATE billing SET state = 2, access_key_exp = '$exp' WHERE id = $id;" ); # state fail
+        $sqlite->do( "UPDATE billing SET state = 2 WHERE id = $id;" ); # state fail
     }
 
     $self->flash(show_message => 1, message => 'Платеж не принят');
-    return $self->redirect_to('/cabinet');
+    return $self->redirect_to('/');
 }
 
 1;

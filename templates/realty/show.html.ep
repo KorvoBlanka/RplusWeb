@@ -11,7 +11,7 @@
 % my $realty;
 % if (looks_like_number($self->stash('realty_id'))) {
 %   $realty = Rplus::Model::Realty::Manager->get_objects(
-%      query => [id => $self->stash('realty_id'), state_code => 'raw'],
+%      query => [id => $self->stash('realty_id'), state_code => 'work'],
 %      require_objects => ['type', 'offer_type'],
 %      with_objects => ['address_object', 'sublandmark', 'ap_scheme', 'house_type', 'room_scheme', 'condition', 'balcony', 'bathroom', 'agent'],
 %   )->[0];

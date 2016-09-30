@@ -57,11 +57,11 @@ sub create {
     }
     my $subject = 'Проверка e-mail';
     my $message = 'Ваш проверочный код: ' . $code;
-
+    say $email."  and  ".$newmail;
     if($newmail){
-        Rplus::Util::Email::send($email, $subject, $message);
-    } else{
         Rplus::Util::Email::send($newmail, $subject, $message);
+    } else{
+        Rplus::Util::Email::send($email, $subject, $message);
     }
     return $self->render(json => {status => 'success', });
 
