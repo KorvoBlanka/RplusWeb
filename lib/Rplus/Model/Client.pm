@@ -26,6 +26,7 @@ __PACKAGE__->meta->setup(
         subscription_offer_types => { type => 'varchar', default => 'none', not_null => 1 },
         agent_id                 => { type => 'integer', remarks => 'идентификатор агента, занимающегося этим клиентом' },
         account_id               => { type => 'integer', not_null => 1 },
+        color_tag                => { type => 'array' },
     ],
 
     primary_key_columns => [ 'id' ],
@@ -40,12 +41,6 @@ __PACKAGE__->meta->setup(
     ],
 
     relationships => [
-        client_color_tags => {
-            class      => 'Rplus::Model::ClientColorTag',
-            column_map => { id => 'client_id' },
-            type       => 'one to many',
-        },
-
         realty => {
             class      => 'Rplus::Model::Realty',
             column_map => { id => 'buyer_id' },

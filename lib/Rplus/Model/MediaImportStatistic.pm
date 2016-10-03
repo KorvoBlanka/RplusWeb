@@ -16,7 +16,7 @@ __PACKAGE__->meta->setup(
         errors_link    => { type => 'integer', not_null => 1, remarks => 'Кол-во ошибок при обработки' },
         add_date_end   => { type => 'timestamp with time zone', not_null => 1, remarks => 'Дата/время окончания импорта' },
         update_link    => { type => 'integer', not_null => 1, remarks => 'Кол-во обновленных ссылок' },
-        id             => { type => 'integer', not_null => 1, sequence => 'media_import_statistic_id_seq1' },
+        id             => { type => 'serial', not_null => 1 },
     ],
 
     primary_key_columns => [ 'id' ],

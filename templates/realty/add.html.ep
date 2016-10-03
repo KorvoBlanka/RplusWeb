@@ -13,7 +13,7 @@
     text-transform: uppercase;
     letter-spacing: 1px;
     content: "Подача объявления";
-  }  
+  }
 
   .dropzone-wrap {
     margin: 8px 0;
@@ -21,7 +21,7 @@
     box-shadow: 0 0 50px rgba(0,0,0,0.13);
     padding: 4px;
     -webkit-border-radius: 3px;
-    border-radius: 3px;    
+    border-radius: 3px;
   }
 
   .dropzone {
@@ -111,6 +111,8 @@
     var floors_count = parseInt($('#inputFloorsCount').val(), 10) || null;
     var price = parseInt($('#inputPrice').val(), 10) || null;
     var owner_phones_str = $('#inputPhone').val();
+    var address = $('#inputAddress').val();
+    var district = $('#inputDistrict').val();
 
     if (!floor && floors_count) {
       floor = floors_count;
@@ -137,7 +139,6 @@
     }
 
     var spec_array = [];
-    spec_array.push($('#inputAddress').val());
     if (type_code == 'house' || type_code == 'cottage') {
       $('#houseSpec input:checkbox:checked').each(function () {
         spec_array.push(dict[$(this).val()]);
@@ -148,7 +149,7 @@
       });
     }
 
-    var description = $('#textDescription').val();    
+    var description = $('#textDescription').val();
 
     $.ajax({
       type: "POST",
@@ -160,8 +161,10 @@
         floors_count: floors_count,
         price: price,
         owner_phones_str: owner_phones_str,
-        specs: spec_array.join(', '),
+        address: address,
+        district: district,
         description: description,
+        work_info: spec_array,
         photos: photos,
       },
     })
@@ -205,7 +208,7 @@
       // Allow: backspace, delete, tab, escape, enter and .
       if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 110,]) !== -1 ||
            // Allow: Ctrl+A
-          (e.keyCode == 65 && e.ctrlKey === true) || 
+          (e.keyCode == 65 && e.ctrlKey === true) ||
            // Allow: home, end, left, right
           (e.keyCode >= 35 && e.keyCode <= 39)) {
                // let it happen, don't do anything
@@ -285,9 +288,16 @@
       </div>
 
       <div class="form-group">
+        <label class="col-lg-4 col-md-4 col-sm-4 control-label easy-label" for="inputDistrict">Район</label>
+        <div class="col-lg-5 col-md-5 col-sm-5">
+          <input type="text" class="form-control" id="inputDistrict" placeholder="">
+        </div>
+      </div>
+
+      <div class="form-group">
         <label class="col-lg-4 col-md-4 col-sm-4 control-label easy-label" for="inputAddress">Адрес</label>
         <div class="col-lg-5 col-md-5 col-sm-5">
-          <input type="text" class="form-control" id="inputAddress" placeholder="">
+          <input type="text" class="form-control" id="inputAddress" placeholder="Улица, дом">
         </div>
       </div>
 
@@ -353,7 +363,7 @@
                 <input type="checkbox" value="childs"> Подходит для семьи с детьми
               </label>
             </form>
-          </div> 
+          </div>
         </div>
       </div>
 
@@ -399,7 +409,7 @@
                 <input type="checkbox" value="drain"> Слив воды в доме
               </label>
             </form>
-          </div> 
+          </div>
         </div>
       </div>
 
@@ -422,7 +432,7 @@
       <button class="button-submit" id="buttonSubmit">Подать объявление</button>
 
     </div>
-  </div>  
+  </div>
 </div>
 <hr class="featurette-divider">
 <div class="container" style="margin-bottom: 50px;">
@@ -430,4 +440,3 @@
   <br>Оплачивая услуги на сайте, Вы принимаете <a href="/pages/oferta">оферту</a>.
   <div class="clear"></div>
 </div>
-

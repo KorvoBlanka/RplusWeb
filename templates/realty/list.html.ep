@@ -805,6 +805,7 @@ $(function () {
             <option value="apartment_small">Малосемейка</option>
             <option value="townhouse">Таунхаус</option>
             <option value="house">Дом</option>
+            <option value="dacha">Дача</option>
             <option value="cottage">Коттедж</option>
             <option value="commersial">Офис</option>
           </select>
@@ -813,7 +814,7 @@ $(function () {
       <div class="form-group">
         <div class="styled-select transparent">
         % # TODO: Use cache
-        % my $landmarks = db->dbh->selectall_arrayref(q{SELECT DISTINCT district FROM realty WHERE district IS NOT NULL AND length(district)>0 AND state_code = 'work' AND account_id=4} , {Slice => {}});
+        % my $landmarks = db->dbh->selectall_arrayref(q{SELECT DISTINCT district FROM realty WHERE district IS NOT NULL AND length(district)>0 AND state_code = 'work' AND account_id=4 AND offer_type_code = 'rent'} , {Slice => {}});
         % my @lands=();
         % foreach my $temp(@$landmarks){
         %           push @lands,$temp->{district};

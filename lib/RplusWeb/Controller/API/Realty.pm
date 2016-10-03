@@ -60,19 +60,20 @@ sub list {
         ($type_code ? (type_code => $type_code) : ()),
         ($district ? (district => $district) : ()),
         ($rooms_count ? ($rooms_count =~ /^\d$/ ? ($rooms_count <= 4 ? (rooms_count => $rooms_count) : (rooms_count => {ge => 5})) : ()) : ()),
-        ($price_low && $price_high ? (price => {ge_le => [$price_low, $price_high]}) : ($price_low ? (price => {ge => $price_low}) : ($price_high ? (price => {le => $price_high}) : ()))),
+        ($price_low && $price_high ? (or => [price => {ge_le => [$price_low, $price_high]}, price =>undef]) : ($price_low ? (or => [price => {ge => $price_low}, price =>undef]) : ($price_high ? (or => [price => {le => $price_high}, price =>undef]) : ()))),
         Rplus::Util::Query->parse($q, $self),
     );
+    say $price_low && $price_high;
 
     my $res = {
         list => [],
-        count => Rplus::Model::Realty::Manager->get_objects_count(query => [@query], require_objects => ['type']) + 1,
+        count => Rplus::Model::Realty::Manager->get_objects_count(query => [@query], require_objects => ['type']),
     };
 
     # Небольшой костыль: если ничего не найдено, удалим FTS данные
     if (!$res->{count}) {
         @query = map { ref($_) eq 'SCALAR' && $$_ =~ /^fts/ ? () : $_ } @query;
-        $res->{count} = Rplus::Model::Realty::Manager->get_objects_count(query => [@query, account_id => 4,], require_objects => ['type']);
+        $res->{count} = Rplus::Model::Realty::Manager->get_objects_count(query => [@query], require_objects => ['type']);
     }
 
     my $realty_iter = Rplus::Model::Realty::Manager->get_objects_iterator(
@@ -86,11 +87,6 @@ sub list {
         per_page => $per_page,
     );
     while (my $realty = $realty_iter->next) {
-        my $street = '';
-        if ($realty->address_object_id) {
-            my $ap = from_json($realty->address_object->metadata)->{'addr_parts'};
-            $street = $ap->[0]->{'name'}.($ap->[0]->{'short_type'} ne 'ул' ? ' '.$ap->[0]->{'full_type'} : '');
-        }
 
         my (@digest, $squares, $squares_land, $floors);
         {
@@ -114,8 +110,8 @@ sub list {
         my $x = {
             id => $realty->id,
             type => $realty->type->name,
-            street => $street,
-            district => $district,
+            address => $realty->{address},
+            district => $realty->{district},
             rooms_count => $realty->rooms_count,
             rooms_offer_count => $realty->rooms_offer_count,
             squares => $squares,
@@ -212,7 +208,7 @@ sub abuse {
 
 sub get_max_price {
     my $self = shift;
-    my $max_price = 50; #$self->db->dbh->selectall_arrayref(q{SELECT MAX(price) FROM realty WHERE offer_type_code like 'rent' AND state_code like 'work'}, {Slice => {}})->[0]->{max};
+    my $max_price = 100; #$self->db->dbh->selectall_arrayref(q{SELECT MAX(price) FROM realty WHERE offer_type_code like 'rent' AND state_code like 'work'}, {Slice => {}})->[0]->{max};
 
     return $self->render(json => {result => 'ok', max_price => $max_price,});
 }
@@ -268,15 +264,16 @@ sub add {
     my $self = shift;
 
     my $offer_type_code = 'rent';
-    my $state_code = 'work';
+    my $state_code = 'raw';
     my $type_code = $self->param('type_code');
 
     my $rooms_count = $self->param('rooms_count') || undef;
     my $floor = $self->param('floor') || undef;
     my $floors_count = $self->param('floors_count') || undef;
     my $price = $self->param('price') || undef;
-
-    my $work_info = $self->param('specs');
+    my $district = $self->param('district');
+    my $address = $self->param('address');
+    my $work_info = $self->param('work_info');
     my $description = $self->param('description');
 
     my $zavrus_id = 16;
@@ -288,14 +285,15 @@ sub add {
 
     $work_info .= ' ТЕЛЕФОН: ' . $owner_phones_str;
 
-    my @photos = $self->param('photos[]');
+    my @photos = $self->param('photos[]') || ();
 
     my $realty = Rplus::Model::Realty->new(
         type_code => $type_code,
         offer_type_code => $offer_type_code,
         state_code => $state_code,
         source_media_id => $zavrus_id,
-
+        address => $address,
+        district => $district,
         rooms_count => $rooms_count,
         floor => $floor,
         floors_count => $floors_count,
@@ -305,10 +303,9 @@ sub add {
 
         work_info => $work_info,
         description => $description,
-		account_id => 4,
+		    account_id => 4,
     )->save;
-
-    foreach (@photos) {
+    foreach  (@photos) {
         my $photo = Rplus::Model::Photo->new;
         $photo->realty_id($realty->id);
         $photo->filename($_);

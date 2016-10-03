@@ -36,7 +36,7 @@
   .icon2 {
     height: 100px;
     width: 162.5px;
-    background-image: url(/img/cost.png);
+    background-image: url(/img/cost_50.png);
   }
 
   .icon3 {
