@@ -10,6 +10,7 @@ use Rplus::Model::QueryCache::Manager;
 use Mojo::Util qw(trim);
 use Encode qw(decode_utf8);
 use JSON;
+use Data::Dumper;
 
 # For tests (disable caching)
 our $USE_CACHE = 1;
@@ -30,7 +31,7 @@ sub _params2json {
 
 # JSON to Rose::DB::Object params
 sub _json2params {
-    my $storable_params = decode_json(shift);
+    my $storable_params = from_json(shift);
     my @params;
     for (@$storable_params) {
         if (ref($_) eq 'HASH' && $_->{ref}) {
@@ -47,7 +48,6 @@ sub _json2params {
 sub parse {
     my ($class, $q, $c) = @_; # Class, Query string, Mojolicious::Controller (for config)
     my $q_orig = $q = trim($q);
-
     return unless $q;
 
     # Rose::DB::Object query format
@@ -57,10 +57,10 @@ sub parse {
     if ($USE_CACHE) {
         my $query_cache_lifetime = ($c && $c->config->{query_cache_lifetime}) || '1 day';
         if (my $qc = Rplus::Model::QueryCache::Manager->get_objects(query => [query => $q, \"add_date >= now() - interval '$query_cache_lifetime'"])->[0]) {
+            say Dumper $qc->params;
             return _json2params($qc->params);
         }
     }
-
     # Some commonly used regexes
     my $sta_re = qr/(?:^|\s+|,\s*)/;
     my $end_re = qr/(?:\s+|,|$)/;
@@ -241,119 +241,16 @@ sub parse {
         }
     }
 
-    # Technical params (based on Full Text Search)
+    # fts address search
     if ($q) {
-        my $dbh = Rplus::DB->new_or_cached->dbh;
+      if ($q =~ s/"(.*?)"// ) {
+        push @params, \("t1.fts @@ plainto_tsquery('english', '" . $1 . "')");
+      }
+    }
 
-        my $_tsv2array = sub {
-            my $tsv = shift;
-            return unless $tsv;
-            $tsv = decode_utf8($tsv);
-            my @x;
-            for (split(/ /, $tsv)) {
-                if (/^'(\w+)':([\d,]+)$/) {
-                    my ($pos, $word) = ($2, $1);
-                    $x[$_] = $word for split /,/, $pos;
-                }
-            }
-            return (grep { $_ } @x);
-        };
-
-        if (my $tsv_raw = $dbh->selectrow_arrayref("SELECT to_tsvector('russian', '".($q =~ s/'/''/gr)."')")->[0]) {
-            my @tsv = $_tsv2array->($tsv_raw);
-            my $tsv = join(' ', @tsv);
-
-            my %found = (address_object => [], landmark => []);
-
-            # First processing - technical params
-            # Try to find keywords listed in query_keywords table
-            {
-                my @xfound;
-                my $sql = "SELECT QK.* FROM query_keywords QK WHERE QK.fts @@ '".join('|', @tsv)."'::tsquery AND ts_rank_cd('{1.0, 1.0, 1.0, 1.0}', QK.fts, '".join('|', @tsv)."'::tsquery) = length(QK.fts)";
-                my $sth = $dbh->prepare($sql);
-                $sth->execute;
-                while (my $row = $sth->fetchrow_hashref) {
-                    my @x = $_tsv2array->($row->{fts});
-                    push @xfound, {ftype => $row->{ftype}, fkey => $row->{fkey}, len => scalar @x, txt => join(' ', @x)};
-                }
-
-                # Delete found keywords for future processing
-                for my $x (sort { $b->{len} <=> $a->{len} } @xfound) {
-                    my $t = $x->{txt};
-                    if ($tsv =~ s/(?:^|\s+)\Q$t\E(?:\s+|$)/ /) {
-                        $found{$x->{ftype}} = [] unless exists $found{$x->{ftype}};
-                        for my $y (@xfound) {
-                            if ($y->{txt} eq $t) {
-                                push $found{$y->{ftype}}, $y->{fkey} unless $y->{added};
-                                $y->{added} = 1;
-                            }
-                        }
-                    }
-                }
-
-                @tsv = grep { $_ } split / /, $tsv;
-                $tsv = join ' ', @tsv;
-            }
-
-            # Second processing - streets
-            {
-                my @xfound;
-                my $sql = "
-                    SELECT AO.id, AO.name, AO.full_type, AO.fts2, ts_rank(AO.fts2, '".join('|', @tsv)."'::tsquery) rank
-                    FROM address_objects AO
-                    WHERE AO.fts @@ '".join('|', @tsv)."'::tsquery AND AO.level = 7 AND AO.curr_status = 0".($c && $c->config->{default_city_guid} ? " AND AO.parent_guid = '".$c->config->{default_city_guid}."'" : '')."
-                    ORDER BY rank DESC
-                    LIMIT 30
-                ";
-                my $sth = $dbh->prepare($sql);
-                $sth->execute;
-                while (my $row = $sth->fetchrow_hashref) {
-                    my @x = $_tsv2array->($row->{fts2});
-                    push @xfound, {ftype => 'address_object', fkey => $row->{id}, len => scalar @x, txt_a => \@x};
-                }
-
-                # Delete found keywords for future processing
-                for my $x (@xfound) {
-                    for my $t (@{$x->{txt_a}}) {
-                        $tsv =~ s/(?:^|\s+)\Q$t\E(?:\s+|$)/ /g;
-                    }
-                    $found{$x->{ftype}} = [] unless exists $found{$x->{ftype}};
-                    push $found{$x->{ftype}}, $x->{fkey};
-                }
-
-                @tsv = grep { $_ } split / /, $tsv;
-                $tsv = join ' ', @tsv;
-            }
-
-            for my $x (keys %found) {
-                if ($x eq 'ap_scheme' || $x eq 'balcony' || $x eq 'bathroom' || $x eq 'condition' || $x eq 'house_type' || $x eq 'room_scheme') {
-                    push @params, $x.'_id' => (@{$found{$x}} == 1 ? $found{$x}->[0] : $found{$x});
-                }
-                elsif ($x eq 'realty_type') {
-                    # TODO: Fixme
-                    push @params, \("t1.type_code IN (SELECT RT.code FROM realty_types RT WHERE RT.id IN (".join(',', @{$found{$x}})."))");
-                }
-                elsif ($x eq 'tag') {
-                    push @params, tags => {ltree_ancestor => $found{$x}}; # @>
-                }
-            }
-
-            if (@{$found{address_object}} && @{$found{landmark}}) {
-                push @params, OR => [
-                    address_object_id => $found{address_object},
-                    landmarks => {'&&' => $found{landmark}},
-                ];
-            }
-            elsif (@{$found{address_object}}) {
-                push @params, address_object_id => $found{address_object};
-            }
-            elsif (@{$found{landmark}}) {
-                push @params, landmarks => {'&&' => $found{landmark}};
-            }
-
-            # Other words => Full Text Search in realty
-            push @params, \("t1.fts @@ '".join('|', @tsv)."'::tsquery") if @tsv;
-        }
+    # FTS tag search
+    if ($q !~ /^\s*$/) {
+      push @params, \("t1.fts_vector @@ plainto_tsquery('russian', '" . $q . "')");
     }
 
     Rplus::Model::QueryCache->new(query => $q_orig, params => _params2json(@params))->save if $USE_CACHE && @params;

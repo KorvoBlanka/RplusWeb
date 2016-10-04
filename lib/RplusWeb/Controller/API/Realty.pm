@@ -5,8 +5,6 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use Rplus::Model::Realty;
 use Rplus::Model::Realty::Manager;
-#use Rplus::Model::RealtyCodesExt;
-#use Rplus::Model::RealtyCodesExt::Manager;
 use Rplus::Model::Photo;
 use Rplus::Model::Photo::Manager;
 
@@ -53,6 +51,7 @@ sub list {
     my $sort_by_q = 'change_date DESC';
     $sort_by_q = 'price ASC' if ($sort_by eq 'price');
 
+    say "hhhhhhh";
     my @query = (
         state_code => 'work',
         offer_type_code => $offer_type_code,
@@ -63,8 +62,7 @@ sub list {
         ($price_low && $price_high ? (or => [price => {ge_le => [$price_low, $price_high]}, price =>undef]) : ($price_low ? (or => [price => {ge => $price_low}, price =>undef]) : ($price_high ? (or => [price => {le => $price_high}, price =>undef]) : ()))),
         Rplus::Util::Query->parse($q, $self),
     );
-    say $price_low && $price_high;
-
+  
     my $res = {
         list => [],
         count => Rplus::Model::Realty::Manager->get_objects_count(query => [@query], require_objects => ['type']),
@@ -81,7 +79,7 @@ sub list {
             @query
         ],
         require_objects => ['type'],
-        with_objects => ['address_object', 'sublandmark', 'ap_scheme', 'house_type', 'room_scheme', 'condition', 'balcony', 'bathroom'],
+        with_objects => [ 'ap_scheme', 'house_type', 'room_scheme', 'condition', 'balcony', 'bathroom'],
         sort_by => $sort_by_q,
         page => $page,
         per_page => $per_page,
@@ -149,16 +147,12 @@ sub get {
     my $realty = Rplus::Model::Realty::Manager->get_objects(
         query => [id => $id, state_code => 'work'],
         require_objects => ['type', 'offer_type'],
-        with_objects => ['address_object', 'sublandmark', 'ap_scheme', 'house_type', 'room_scheme', 'condition', 'balcony', 'bathroom', 'agent'],
+        with_objects => ['ap_scheme', 'house_type', 'room_scheme', 'condition', 'balcony', 'bathroom', 'agent'],
     )->[0];
     return $self->render_not_found unless $realty;
 
     my $street = '';
     my $district = '';
-    if ($realty->address_object_id) {
-        my $ap = from_json($realty->address_object->metadata)->{'addr_parts'};
-        $street = $ap->[0]->{'name'}.($ap->[0]->{'short_type'} ne 'ул' ? ' '.$ap->[0]->{'full_type'} : '');
-    }
 
     my $squares = join('/', $realty->square_total || (), $realty->square_living || (), $realty->square_kitchen || ()).' м²' if $realty->square_total || $realty->square_living || $realty->square_kitchen;
     my $squares_land = $realty->square_land.($realty->square_land_type || 'ar' eq 'ar' ? ' сот.' : ' га.') if $realty->square_land;

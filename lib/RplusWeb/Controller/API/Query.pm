@@ -50,20 +50,20 @@ sub complete {
             $vals{$x->{fval}} = 1;
         }
 
-        my $addrobj_iter = Rplus::Model::AddressObject::Manager->get_objects_iterator(
-            query => [
-                [\'lower(name) LIKE ?' => lc($term =~ s/([%_])/\\$1/gr).'%'],
-                level => 7,
-                curr_status => 0,
-                ($self->config->{'default_city_guid'} ? (parent_guid => $self->config->{'default_city_guid'}) : ()),
-                '!fts' => undef,
-            ],
-            #sort_by => 'level DESC',
-            limit => $limit,
-        );
-        while (my $addrobj = $addrobj_iter->next) {
-            $vals{lc($addrobj->name.' '.$addrobj->full_type)} = 1;
-        }
+        #my $addrobj_iter = Rplus::Model::AddressObject::Manager->get_objects_iterator(
+        #    query => [
+        #        [\'lower(name) LIKE ?' => lc($term =~ s/([%_])/\\$1/gr).'%'],
+        #        level => 7,
+        #        curr_status => 0,
+        #        ($self->config->{'default_city_guid'} ? (parent_guid => $self->config->{'default_city_guid'}) : ()),
+        #        '!fts' => undef,
+        #    ],
+        #    #sort_by => 'level DESC',
+        #    limit => $limit,
+        #);
+        #while (my $addrobj = $addrobj_iter->next) {
+        #    $vals{lc($addrobj->name.' '.$addrobj->full_type)} = 1;
+        #}
     }
 
     for (sort { length($a) <=> length($b) } keys %vals) {
