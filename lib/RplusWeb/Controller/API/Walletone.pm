@@ -7,6 +7,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use Rplus::Util::Email;
 use Rplus::Util::Config;
+use Data::Dumper;
 
 my $secret_key = "373268624b446f335b4537356434743363594a756b767634573662";
 
@@ -39,10 +40,11 @@ sub prepare {
 
     $sqlite->do( "INSERT INTO billing (account_id, sum, state, provider) VALUES ( '$id', '$sum', 0, 'walletone' );" );
 
-    $sth = $sqlite->prepare( "SELECT id FROM billing WHERE account_id = '$id' AND sum = '$sum' AND state = 0 AND  provider= 'walletone';" );
+    $sth = $sqlite->prepare( "SELECT id FROM billing WHERE account_id = '$id' AND sum = '$sum' AND state = 0 AND  provider= 'walletone' ORDER BY id DESC;" );
     $sth->execute();
 
     my $inv_id = $sth->fetchrow();
+    say Dumper $inv_id;
     my $success_url = "http://zavrus.com/api/walletone/success?InvId=$inv_id&OutSum=$sum";
     my $fail_url = "http://zavrus.com/api/walletone/fail?InvId=$inv_id";
 

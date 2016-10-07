@@ -657,6 +657,7 @@
         if (form_name == 'UnlockForm') {
           var email = $('#InputEmail_u').val();
           var access_key = $('#InputKey_u').val();
+
           if (!access_key || !email) {
             $('.screen-message').text('Ключ не введен');
             $('.screen-message').removeClass('hidden');
@@ -697,7 +698,8 @@
             $('.screen-message').text('Произошла ошибка...');
             $('.screen-message').removeClass('hidden');
           });
-
+          $('#InputEmail_u').val('');
+          $('#InputKey_u').val('');
           $('.key-screen').addClass('hidden');
         } else if ($(this).attr('id') == 'emailForm') {
           var email = $('#InputEmail').val();
@@ -751,7 +753,8 @@
             $('.screen-message').text('Произошла ошибка...');
             $('.screen-message').removeClass('hidden');
           });
-
+          $('#InputEmail').val('');
+          $('#InputCode').val('');
         } else if ($(this).attr('id') == 'keyPayForm') {
 
           var email = $('#InputEmail').val();
