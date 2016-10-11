@@ -3,12 +3,16 @@ package RplusWeb::Controller::API::User;
 use Mojo::Base 'Mojolicious::Controller';
 
 use Rplus::DB;
+
 use Rplus::Util::Email;
 
 use DateTime;
 use Data::Dumper;
 use JSON;
 use DBI;
+use Mojo::Log;
+use DBM::Deep;
+use DateTime::Format::DateParse;
 
 sub _generate_code {
     srand(time);
@@ -22,10 +26,10 @@ sub _generate_code {
 
 sub create {
     my $self = shift;
-
+    my $log = Mojo::Log->new(path => 'log/createUser.log', level => 'debug');
     # Input params
     my $email = $self->param('email');
-
+    $log->debug('Input email user: '.$email);
 	  #return $self->render(json => {status => 'fail', });
     my $sqlite = DBI->connect('dbi:SQLite:dbname=zavrus.db;','','',{RaiseError=>1},)
     or die die $DBI::errstr;
@@ -42,6 +46,7 @@ sub create {
     if (!$newmail) {
         eval {
             $sqlite->do( "INSERT INTO accounts (email, vcode, vcode_exp) VALUES ( '$email', '$code', '$ndate' );" );
+            $log->debug('Insert into accounts: '. $email. ', '. $code .', '. $ndate);
             1;
         } or do {
             return $self->render(json => {error => $@}, status => 500);
@@ -49,6 +54,7 @@ sub create {
     } else {
         eval {
             $sqlite->do( "UPDATE accounts SET vcode = '$code', vcode_exp = '$ndate' WHERE email = '$newmail' ;" );
+            $log->debug('UPDATE accounts SET vcode = '. $code. ', vcode_exp = '.$ndate.' WHERE email = '.$newmail);
             1;
         } or do {
             return $self->render(json => {error => $@}, status => 500);
@@ -57,7 +63,6 @@ sub create {
     }
     my $subject = 'Проверка e-mail';
     my $message = 'Ваш проверочный код: ' . $code;
-    say $email."  and  ".$newmail;
     if($newmail){
         Rplus::Util::Email::send($newmail, $subject, $message);
     } else{
@@ -102,29 +107,36 @@ sub unlock {
 
     # Input params
     my $email = $self->param('email');
-    my $access_key = $self->param('access_key');
+    my $db = DBM::Deep->new( "zavrus.deep.db" );
+    my $log = Mojo::Log->new(path => 'log/UserUnlock.log', level => 'debug');
+    $log->debug("Start logging..............................................................................");
 
-    my $sqlite = DBI->connect('dbi:SQLite:dbname=zavrus.db;','','',{RaiseError=>1},)
-    or die die $DBI::errstr;
+    #say $ndate;
+    my $id;
+    my $exp_data;
+    foreach (@{$db->{accounts}}){
+        if ($_->{email} eq $email){
+            $id=$_->{id};
+            $exp_data = $_->{exp_data};
+            last;
+        }
+    }
 
+    return $self->render(json => {result => 'fail'}) unless $id;
+    $log->debug("User ID is $id ( $email)");
+    $log->debug("Valid up to $exp_data");
     my $dt = DateTime->now(time_zone=>'local');
-    my $format = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H:%M:%S' );
-    my $ndate= $format->format_datetime($dt);
-
-    my $sth = $sqlite->prepare( "SELECT id, email, access_key, access_key_exp  FROM accounts WHERE email = '$email' AND access_key='$access_key' AND access_key_exp > strftime('%Y-%m-%d %H:%M:%S', '$ndate'); " );
-    $sth->execute();
-    my ($exid, $exmail, $exkey, $exkey_exp) = $sth->fetchrow();
-
-
-    return $self->render(json => {result => 'fail'}) unless $exid;
+    my $dt1 = DateTime::Format::DateParse->parse_datetime($exp_data);
+    $log->debug("Dates: now $dt, valid $dt1");
+    return $self->render(json => {result => 'fail'}) if($dt1 < $dt);
 
     $self->session->{'user'} = {
-        id => $exid,
-        email => $exmail,
-        access_key => $exkey,
+        id => $id,
+        email => $email,
     };
-
-    return $self->render(json => {result => 'ok', exp => $exkey_exp});
+    $log->debug("Session on:  $id ( $email)");
+    $log->debug(".......................................................................................................");
+    return $self->render(json => {result => 'ok', exp => $dt1});
 }
 
 sub lock {

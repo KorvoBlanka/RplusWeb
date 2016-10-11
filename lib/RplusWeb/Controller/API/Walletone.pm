@@ -8,6 +8,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use Rplus::Util::Email;
 use Rplus::Util::Config;
 use Data::Dumper;
+use DBM::Deep;
 
 my $secret_key = "373268624b446f335b4537356434743363594a756b767634573662";
 
@@ -23,30 +24,47 @@ sub _generate_code {
 
 sub prepare {
     my $self = shift;
-
     my $email = $self->param('email');
-
+    my $type_pay = $self->param('payment');
+    my $log = Mojo::Log->new(path => 'log/WalletonePrepare.log', level => 'debug');
     my $config = Rplus::Util::Config::get_config();
 
-    my $sum = $config->{day_pay};
+    my $sum = $config->{pay}->{$type_pay}->{sum};
+    $log->debug("Start logging..............................................................................");
+    $log->debug('User input data: E-mail: '.$email.' ; Change pay summ: '.$sum);
+    my $db = DBM::Deep->new( "zavrus.deep.db" );
+    my $id;
+    my $exp_data;
+    foreach (@{$db->{accounts}}){
+        if ($_->{email} eq $email){
+            $id = $_->{id};
+            $exp_data = $_->{exp_data};
+            last;
+        }
+    }
+    unless ($id){
+        push @{$db->{accounts}}, {
+                                  email => $email,
+                                  id => (scalar @{$db->{accounts}} + 1),
+                                };
+        $id = scalar @{$db->{accounts}};
+    }
 
-    my $sqlite = DBI->connect('dbi:SQLite:dbname=zavrus.db;','','',{RaiseError=>1},)
-    or die die $DBI::errstr;
+    $log->debug("Accounts id is ".$id." of e-mail = $email");
+    #return $self->render(json => {result => 'fail', reason => 'account not found'}) unless $id;
 
-    my $sth = $sqlite->prepare( "SELECT id FROM accounts WHERE email = '$email';" );
-    $sth->execute();
-    my $id = $sth->fetchrow();
-    return $self->render(json => {result => 'fail', reason => 'account not found'}) unless $id;
+    push @{$db->{billing}}, {
+                                id => (scalar @{$db->{billing}} + 1),
+                                id_account => $id,
+                                state => 0,
+                                sum => $sum,
+                                id => (scalar @{$db->{billing}} + 1),
+                              };
+    my $inv_id = scalar @{$db->{billing}};
+    $log->debug("New billing number is $inv_id");
 
-    $sqlite->do( "INSERT INTO billing (account_id, sum, state, provider) VALUES ( '$id', '$sum', 0, 'walletone' );" );
-
-    $sth = $sqlite->prepare( "SELECT id FROM billing WHERE account_id = '$id' AND sum = '$sum' AND state = 0 AND  provider= 'walletone' ORDER BY id DESC;" );
-    $sth->execute();
-
-    my $inv_id = $sth->fetchrow();
-    say Dumper $inv_id;
-    my $success_url = "http://zavrus.com/api/walletone/success?InvId=$inv_id&OutSum=$sum";
-    my $fail_url = "http://zavrus.com/api/walletone/fail?InvId=$inv_id";
+    my $success_url = "http://dev.zavrus.com/api/walletone/success?InvId=$inv_id&OutSum=$sum";
+    my $fail_url = "http://dev.zavrus.com/api/walletone/fail?InvId=$inv_id";
 
     my %fields;
 
@@ -75,7 +93,7 @@ sub prepare {
         success_url => $success_url,
         fail_url => $fail_url,
     };
-
+    $log->debug(".......................................................................................................");
     return $self->render(json => $res);
 }
 
@@ -85,50 +103,81 @@ sub result {
     my $signature = $self->param('WMI_SIGNATURE');
     my $inv_id = $self->param('WMI_PAYMENT_NO');
     my $sum = $self->param('WMI_PAYMENT_AMOUNT');
-    my $sqlite = DBI->connect('dbi:SQLite:dbname=zavrus.db;','','',{RaiseError=>1},)
-    or die die $DBI::errstr;
+    my $config = Rplus::Util::Config::get_config();
 
-    my $sth = $sqlite->prepare( "SELECT * FROM billing WHERE id = '$inv_id';" );
-    $sth->execute();
+    my $config_pay = $config->{pay};
 
-    my ( $fid, $finv_id, $fsum, $fstate, $fprovider) = $sth->fetchrow();
-
+    my $db = DBM::Deep->new( "zavrus.deep.db" );
+    my $log = Mojo::Log->new(path => 'log/WalletoneResult.log', level => 'debug');
+    $log->debug("Start logging..............................................................................");
+    my ($id, $fsum, $id_acc);
+    foreach (@{$db->{billing}}){
+        if ($_->{id} == $inv_id){
+            $id = $_->{id};
+            $fsum = $_ -> {sum};
+            $id_acc = $_ -> {id_account};
+            last;
+        }
+    }
+    $log->debug("ID of billing is $id sum = $fsum, account ID = $id_acc");
     # проверим счет
-    if(!$fid) {
-        return $self->render(text => 'WMI_RESULT=RETRY&WMI_DESCRIPTION=bill not found');
-    }
-
+    return $self->render(text => 'WMI_RESULT=RETRY&WMI_DESCRIPTION=bill not found') unless ($id);
     # проверим сумму
-    if($fsum != $sum) {
-        return $self->render(text => 'WMI_RESULT=RETRY&WMI_DESCRIPTION=wrong_sum');
+    return $self->render(text => 'WMI_RESULT=RETRY&WMI_DESCRIPTION=wrong_sum') unless ($fsum == $sum);
+
+    my ($acc_email, $exp_data);
+    foreach (@{$db->{accounts}}){
+        if ($_->{id} == $id_acc){
+            $acc_email = $_ -> {email};
+            $exp_data = $_ -> {exp_data};
+            last;
+        }
     }
+    $log->debug("Accounts`s email is $acc_email . Valid up to $exp_data");
 
-    $sth = $sqlite->prepare( "SELECT email, balance FROM accounts WHERE id = '$finv_id';" );
-    $sth->execute();
-    my ( $aemail, $abalance) = $sth->fetchrow();
-
-    if (!$aemail) {
+    if (!$acc_email) {
         return $self->render(text => 'WMI_RESULT=RETRY&WMI_DESCRIPTION=user not found');
+        $log->debug("Not found email!!!");
     }
 
-    $sqlite->do( "UPDATE billing SET state = 1 WHERE id = $fid;" );
+    foreach (@{$db->{billing}}){
+        if ($_->{id} == $inv_id){
+            $_->{state} == 1;
+            last;
+        }
+    }
 
+    my $pay_days;
+    while ( my ($type, $value) = each(%{$config_pay}) ) {
+        if($value -> {sum} == $sum){
+            $pay_days = $value -> {days};
+        }
+    }
 
-    my $balance =  $sum+$abalance;
+    $log->debug("Paid for $pay_days days");
 
     my $dt = DateTime->now(time_zone=>'local');
-    my $exp = $dt->add(days => 1);
-    my $format = DateTime::Format::Strptime->new(pattern => '%Y-%m-%d %H:%M:%S');
-    my $ndate= $format->format_datetime($exp);
+    my $new_date;
 
-    my $genercode = _generate_code(8);
-    $sqlite->do( "UPDATE accounts SET access_key = '$genercode', access_key_exp = '$ndate', balance = '$balance' WHERE id = $finv_id;" );
+    if($dt > $exp_data || !$exp_data){
+        $new_date = $dt->add(days => $pay_days);
+    } else {
+        $new_date = $exp_data->add(days => $pay_days);
+    }
 
-    my $subject = 'Ключ доступа';
-    my $message = 'Ваш ключ на один день: ' .$genercode;
-    say  $aemail;
-    Rplus::Util::Email::send($aemail, $subject, $message);
+    foreach (@{$db->{accounts}}){
+        if ($_->{id} == $id_acc){
+            $exp_data = $_ -> {$new_date};
+            last;
+        }
+    }
+    $log->debug("Access to $new_date");
+    #$log->debug("code at one day = '$genercode'");
 
+    my $subject = 'Оплата доступа';
+    my $message = 'Оплата вашего доступа на zavrus.com успешно совершена. Доступ открыт до ' .$new_date;
+    Rplus::Util::Email::send($acc_email, $subject, $message);
+    $log->debug(".......................................................................................................");
     return $self->render(text => 'WMI_RESULT=OK');
 }
 
@@ -138,50 +187,68 @@ sub success {
     my $inv_id = $self->param('InvId');
     my $sum = $self->param('OutSum');
 
-    my $sqlite = DBI->connect('dbi:SQLite:dbname=zavrus.db;','','',{RaiseError=>1},)
-    or die die $DBI::errstr;
+    my $log = Mojo::Log->new(path => 'log/WalletoneSuccess.log', level => 'debug');
+    $log->debug("Start logging..............................................................................");
+    my $db = DBM::Deep->new( "zavrus.deep.db" );
 
-    my $sth = $sqlite->prepare( "SELECT account_id FROM billing WHERE id = '$inv_id';" );
-    $sth->execute();
-    my $id = $sth->fetchrow();
-
-    # проверим
-    if(!$id) {
-        $self->flash(show_message => 1, message => "Не найден счет. Обратитесь в службу поддержки.");
-        return $self->redirect_to('/');
+    my ($id_acc, $id_bill);
+    foreach (@{$db->{billing}}){
+        if ($_->{id} == $inv_id){
+            $id_acc = $_ -> {id_account};
+            $id_bill = $_ -> {id};
+            last;
+        }
     }
 
-    $sth = $sqlite->prepare( "SELECT id FROM accounts WHERE id = '$id';" );
-    $sth->execute();
-    my ($aid) = $sth->fetchrow();
+    # проверим
+    if(!$id_bill) {
+        $self->flash(show_message => 1, message => "Не найден счет. Обратитесь в службу поддержки.");
+        $log->debug("Show message: Не найден счет. Обратитесь в службу поддержки");
+        return $self->redirect_to('/');
+    } else {
+        $log->debug("Billing number is $id_bill");
+    }
+    my ($aid, $email);
+    foreach (@{$db->{accounts}}){
+        if ($_->{id} == $id_acc){
+            $aid = $id_acc;
+            $email = $_->{email};
+            last;
+        }
+    }
 
     if (!$aid) {
         $self->flash(show_message => 1, message => "Не найдена учетная запись. Обратитесь в службу поддержки.");
+        $log->debug("Show message: Не найдена учетная запись. Обратитесь в службу поддержки");
+    } else {
+        $log->debug("Account ID is $aid");
     }
 
-    $self->flash(show_message => 1, message => 'Платеж успешно принят. На счет зачислено '. $sum . ' рублей.
-                      Пароль доступа отправлен на указанный вами электронный адрес');
+    $self->flash(show_message => 1, message => 'Платеж успешно принят. На счет зачислено '. $sum . ' рублей. Используйте свой электронный адрес для входа в систему');
+    $log->debug(".......................................................................................................");
+    $self->session->{'user'} = {
+        id => $aid,
+        email => $email,
+    };
 
     return $self->redirect_to('/');
 }
 
 sub fail {
     my $self = shift;
-
+    my $db = DBM::Deep->new( "zavrus.deep.db" );
     my $inv_id = $self->param('InvId');
-
-    my $sqlite = DBI->connect('dbi:SQLite:dbname=zavrus.db;','','',{RaiseError=>1},)
-    or die die $DBI::errstr;
-
-    my $sth = $sqlite->prepare( "SELECT id FROM billing WHERE id = '$inv_id';" );
-    $sth->execute();
-    my ($id) = $sth->fetchrow();
-
-    if ($id) {
-        $sqlite->do( "UPDATE billing SET state = 2 WHERE id = $id;" ); # state fail
+    my $log = Mojo::Log->new(path => 'log/WalletoneFail.log', level => 'debug');
+    $log->debug("Start logging..............................................................................");
+    foreach (@{$db->{billing}}){
+        if ($_ -> {id} == $inv_id){
+            $_ -> {state} = 2;
+            last;
+        }
     }
-
+    $log->debug("Billing number is $inv_id which failed");
     $self->flash(show_message => 1, message => 'Платеж не принят');
+    $log->debug(".......................................................................................................");
     return $self->redirect_to('/');
 }
 

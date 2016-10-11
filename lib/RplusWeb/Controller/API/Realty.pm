@@ -51,7 +51,6 @@ sub list {
     my $sort_by_q = 'change_date DESC';
     $sort_by_q = 'price ASC' if ($sort_by eq 'price');
 
-    say "hhhhhhh";
     my @query = (
         state_code => 'work',
         offer_type_code => $offer_type_code,
@@ -62,7 +61,7 @@ sub list {
         ($price_low && $price_high ? (or => [price => {ge_le => [$price_low, $price_high]}, price =>undef]) : ($price_low ? (or => [price => {ge => $price_low}, price =>undef]) : ($price_high ? (or => [price => {le => $price_high}, price =>undef]) : ()))),
         Rplus::Util::Query->parse($q, $self),
     );
-  
+
     my $res = {
         list => [],
         count => Rplus::Model::Realty::Manager->get_objects_count(query => [@query], require_objects => ['type']),

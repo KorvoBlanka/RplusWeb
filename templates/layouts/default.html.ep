@@ -1,7 +1,7 @@
 % use Data::Dumper;
 % use Rplus::Util::Config;
 % my $config = Rplus::Util::Config::get_config();
-% my $sum = $config->{day_pay};
+% my $sum = $config->{pay};
 <!DOCTYPE html>
 <html>
   <head>
@@ -178,7 +178,7 @@
       .unlock-screen {
         border-radius: 4px;
         position: fixed;
-        height: 250px;
+        height: 150px;
         width: 360px;
         top: 50%;
         left: 50%;
@@ -431,7 +431,7 @@
 
     <form id="WalletonePaymentForm" target="_newtab" method="post" action="https://www.walletone.com/checkout/default.aspx" accept-charset="UTF-8">
       <input type="hidden" name="WMI_MERCHANT_ID" value="160663547396"/>
-      <input type="hidden" name="WMI_PAYMENT_AMOUNT" value="<%= $sum %>"/>
+      <input type="hidden" name="WMI_PAYMENT_AMOUNT" value=""/>
       <input type="hidden" name="WMI_PAYMENT_NO" value=""/>
       <input type="hidden" name="WMI_CURRENCY_ID" value="643"/>
       <input type="hidden" name="WMI_DESCRIPTION" value="Оплата ключа доступа zavrus.com"/>
@@ -453,14 +453,8 @@
       <div class="screen-container" style="padding: 45px 15px 15px;">
         <form role="form" id="UnlockForm" style="color: #fff">
           <div class="form-group">
-            <label for="InputEmail_u" style="color: #dadada;">Email:</label>
             <input type="email" class="form-control" id="InputEmail_u" placeholder="введите ваш e-mail" style="opacity: 0.8;">
           </div>
-          <div class="form-group">
-            <label for="InputKey" style="color: #dadada;">Ключ:</label>
-            <input type="text" class="form-control" id="InputKey_u" placeholder="введите ключ" style="opacity: 0.8;">
-          </div>
-          <a href="#" class="pull-left" id="userReg" style="color: #fff; font-size: 16px; font-weight: 100; letter-spacing: 1px; text-decoration: none;">Нет ключа?</a>
           <span class="screen-message pull-left text-danger hidden" style="position: absolute; left: 15px; top: 215px;"></span>
           <button class="btn btn-default pull-right">Войти</button>
         </form>
@@ -500,17 +494,36 @@
       <div class="get-key-screen-container" style="padding: 45px 15px 15px;">
         <form role="form" id="keyPayForm" style="color: #fff">
           <div class="form-group">
-            <label for="InputPaymentSystem" style="color: #dadada;">Выберите платежную систему. Стоимость ключа - <%= $sum %> рублей в сутки. Ключ будет отправлен на указанный вами e-mail:</label>
+            <label for="InputPaymentSystem" style="color: #dadada;">Выберите срок действия вашего e-mail</label>
+
             <div class="radio">
               <label>
-                <input type="radio" name="optionPaymentSystem" id="optionsPaymentSystem1" value="robokassa" disabled>
-                &nbsp;Робокасса
+                <input type="radio" name="optionPaymentSystem" id="" value="day_pay" checked>
+                &nbsp; 1 сутки: <%= $sum->{day_pay}->{sum} %> рублей
               </label>
             </div>
             <div class="radio">
               <label>
-                <input type="radio" name="optionPaymentSystem" id="optionsPaymentSystem2" value="walletone" checked>
-                &nbsp;Единый кошелек
+                <input type="radio" name="optionPaymentSystem" id="" value="day3_pay" >
+                &nbsp; 3 суток: <%= $sum->{day3_pay}->{sum} %> рублей
+              </label>
+            </div>
+            <div class="radio">
+              <label>
+                <input type="radio" name="optionPaymentSystem" id="" value="week_pay" >
+                &nbsp; 1 неделя : <%= $sum->{week_pay}->{sum} %> рублей
+              </label>
+            </div>
+            <div class="radio">
+              <label>
+                <input type="radio" name="optionPaymentSystem" id="" value="week2_pay" >
+                &nbsp; 2 недели : <%= $sum->{week2_pay}->{sum} %> рублей
+              </label>
+            </div>
+            <div class="radio">
+              <label>
+                <input type="radio" name="optionPaymentSystem" id="" value="month_pay" >
+                &nbsp; 1 месяц : <%= $sum->{month_pay}->{sum} %> рублей
               </label>
             </div>
           </div>
@@ -656,10 +669,9 @@
         var form_name = $(this).attr('id');
         if (form_name == 'UnlockForm') {
           var email = $('#InputEmail_u').val();
-          var access_key = $('#InputKey_u').val();
 
-          if (!access_key || !email) {
-            $('.screen-message').text('Ключ не введен');
+          if (!email) {
+            $('.screen-message').text('E-mail не введен');
             $('.screen-message').removeClass('hidden');
             return;
           }
@@ -668,7 +680,6 @@
             url: "/api/user/unlock",
             data: {
               email: email,
-              access_key: access_key,
             },
           })
           .done(function (data, textStatus, jqXHR) {
@@ -690,16 +701,14 @@
               location.reload();
               // вывести e-mail и оставшееся время
             } else {
-              $('.screen-message').text('Неверный ключ');
-              $('.screen-message').removeClass('hidden');
+                $('.key-pay-screen').removeClass('hidden');
+                $('.unlock-screen').addClass('hidden');
             }
           })
           .fail(function (jqXHR, textStatus, errorThrown) {
             $('.screen-message').text('Произошла ошибка...');
             $('.screen-message').removeClass('hidden');
           });
-          $('#InputEmail_u').val('');
-          $('#InputKey_u').val('');
           $('.key-screen').addClass('hidden');
         } else if ($(this).attr('id') == 'emailForm') {
           var email = $('#InputEmail').val();
@@ -753,40 +762,19 @@
             $('.screen-message').text('Произошла ошибка...');
             $('.screen-message').removeClass('hidden');
           });
-          $('#InputEmail').val('');
-          $('#InputCode').val('');
         } else if ($(this).attr('id') == 'keyPayForm') {
 
-          var email = $('#InputEmail').val();
-          var payment_system = $('input[name="optionPaymentSystem"]:checked').val();
-
-          if (payment_system == 'robokassa') {
-            $.ajax({
-              type: "POST",
-              url: "/api/robokassa/prepare",
-              data: {email: email},
-            })
-            .done(function (data, textStatus, jqXHR) {
-              //$("#RoboPaymentForm [name='InvId']").val(data.inv_id);
-              //$("#RoboPaymentForm [name='SignatureValue']").val(data.crc);
-              //$("#RoboPaymentForm [name='OutSum']").val(data.out_sum);
-
-              $('.key-pay-screen').addClass('hidden');
-              $('.key-screen').removeClass('hidden');
-
-              document.getElementById("RoboPaymentForm").submit();
-            })
-            .fail(function (jqXHR, textStatus, errorThrown) {
-              alert('Не удалось выставить счет, повторите попытку позже или обратитесь в службу поддержки');
-            });
-          } else if (payment_system == 'walletone') {
-
-            $.ajax({
+          var email = $('#InputEmail_u').val();
+          var payment = $('input[name="optionPaymentSystem"]:checked').val();
+          $.ajax({
               type: "POST",
               url: "/api/walletone/prepare",
-              data: {email: email},
-            })
-            .done(function (data, textStatus, jqXHR) {
+              data: {
+                email: email,
+                payment: payment,
+              },
+          })
+          .done(function (data, textStatus, jqXHR) {
               $("#WalletonePaymentForm [name='WMI_PAYMENT_NO']").val(data.inv_id);
               $("#WalletonePaymentForm [name='WMI_PAYMENT_AMOUNT']").val(data.out_sum);
               $("#WalletonePaymentForm [name='WMI_SIGNATURE']").val(data.crc);
@@ -795,17 +783,11 @@
               $("#WalletonePaymentForm [name='WMI_FAIL_URL']").val(data.fail_url);
 
               $('.key-pay-screen').addClass('hidden');
-              $('.key-screen').removeClass('hidden');
-
               document.getElementById("WalletonePaymentForm").submit();
-            })
-            .fail(function (jqXHR, textStatus, errorThrown) {
+          })
+          .fail(function (jqXHR, textStatus, errorThrown) {
               alert('Не удалось выставить счет, повторите попытку позже или обратитесь в службу поддержки');
-            });
-
-          } else {
-            // wtf?!
-          }
+          });
 
         } else if ($(this).attr('id') == 'keyForm') {
           var email = $('#InputEmail').val();
