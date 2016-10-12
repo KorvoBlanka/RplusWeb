@@ -30,6 +30,7 @@ sub prepare {
     my $config = Rplus::Util::Config::get_config();
 
     my $sum = $config->{pay}->{$type_pay}->{sum};
+    my $prefix_number = $config->{prefix_payment_number};
     $log->debug("Start logging..............................................................................");
     $log->debug('User input data: E-mail: '.$email.' ; Change pay summ: '.$sum);
     my $db = DBM::Deep->new( "zavrus.deep.db" );
@@ -58,9 +59,9 @@ sub prepare {
                                 id_account => $id,
                                 state => 0,
                                 sum => $sum,
-                                id => (scalar @{$db->{billing}} + 1),
+                                id => $prefix_number.(scalar @{$db->{billing}} + 1),
                               };
-    my $inv_id = scalar @{$db->{billing}};
+    my $inv_id = $prefix_number.(scalar @{$db->{billing}});
     $log->debug("New billing number is $inv_id");
 
     my $success_url = "http://dev.zavrus.com/api/walletone/success?InvId=$inv_id&OutSum=$sum";
@@ -104,7 +105,7 @@ sub result {
     my $inv_id = $self->param('WMI_PAYMENT_NO');
     my $sum = $self->param('WMI_PAYMENT_AMOUNT');
     my $config = Rplus::Util::Config::get_config();
-
+    my $prefix_number = $config->{prefix_payment_number};
     my $config_pay = $config->{pay};
 
     my $db = DBM::Deep->new( "zavrus.deep.db" );
@@ -112,7 +113,7 @@ sub result {
     $log->debug("Start logging..............................................................................");
     my ($id, $fsum, $id_acc);
     foreach (@{$db->{billing}}){
-        if ($_->{id} == $inv_id){
+        if ($_->{id} eq $inv_id){
             $id = $_->{id};
             $fsum = $_ -> {sum};
             $id_acc = $_ -> {id_account};
@@ -141,7 +142,7 @@ sub result {
     }
 
     foreach (@{$db->{billing}}){
-        if ($_->{id} == $inv_id){
+        if ($_->{id} eq $inv_id){
             $_->{state} == 1;
             last;
         }
@@ -167,7 +168,7 @@ sub result {
 
     foreach (@{$db->{accounts}}){
         if ($_->{id} == $id_acc){
-            $exp_data = $_ -> {$new_date};
+            $_ ->{exp_data} = $new_date;
             last;
         }
     }
@@ -193,7 +194,7 @@ sub success {
 
     my ($id_acc, $id_bill);
     foreach (@{$db->{billing}}){
-        if ($_->{id} == $inv_id){
+        if ($_->{id} eq $inv_id){
             $id_acc = $_ -> {id_account};
             $id_bill = $_ -> {id};
             last;
@@ -241,7 +242,7 @@ sub fail {
     my $log = Mojo::Log->new(path => 'log/WalletoneFail.log', level => 'debug');
     $log->debug("Start logging..............................................................................");
     foreach (@{$db->{billing}}){
-        if ($_ -> {id} == $inv_id){
+        if ($_ -> {id} eq $inv_id){
             $_ -> {state} = 2;
             last;
         }

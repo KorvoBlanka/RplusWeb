@@ -1,7 +1,7 @@
 % layout 'default';
 % use Rplus::Util::Config;
 % my $config = Rplus::Util::Config::get_config();
-% my $sum = $config->{day_pay};
+% my $sum = $config->{pay};
 % use JSON;
 
 % content_for header => begin
@@ -124,7 +124,7 @@
         Платный доступ
         </h4>
         <p>
-        Доступ к контактам платный, цена составляет <%= $sum %> рублей за сутки и не зависит от количества просмотренных объектов.
+        Доступ к контактам платный, цена составляет <%= $sum->{day_pay}->{sum} %> рублей за сутки и не зависит от количества просмотренных объектов.
         </p>
       </div>
       <div class="col-lg-3 col-md-3 col-sm-3">

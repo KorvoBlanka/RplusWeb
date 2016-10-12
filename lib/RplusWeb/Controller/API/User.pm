@@ -96,7 +96,19 @@ sub check_code {
 sub check_session {
     my $self = shift;
     if ($self->session->{'user'}) {
-        return $self->render(json => {result => 'login', email => $self->session->{'user'}->{email}});
+        my $db = DBM::Deep->new( "zavrus.deep.db" );
+        my $exp_data;
+        foreach (@{$db->{accounts}}){
+          say $_->{exp_data};
+            if ($_->{email} eq $self->session->{'user'}->{email}){
+                $exp_data = $_->{exp_data};
+                last;
+            }
+        }
+        my $dt = DateTime -> now(time_zone=>'local') -> epoch();
+        my $dt1 = DateTime::Format::DateParse->parse_datetime($exp_data) -> epoch();
+        my $dir =  $dt1 - $dt;
+        return $self->render(json => {result => 'login', email => $self->session->{'user'}->{email}, exp_time => $dir});
     } else {
         return $self->render(json => {result => 'no_login'});
     }
@@ -116,7 +128,7 @@ sub unlock {
     my $exp_data;
     foreach (@{$db->{accounts}}){
         if ($_->{email} eq $email){
-            $id=$_->{id};
+            $id = $_->{id};
             $exp_data = $_->{exp_data};
             last;
         }
@@ -128,7 +140,7 @@ sub unlock {
     my $dt = DateTime->now(time_zone=>'local');
     my $dt1 = DateTime::Format::DateParse->parse_datetime($exp_data);
     $log->debug("Dates: now $dt, valid $dt1");
-    return $self->render(json => {result => 'fail'}) if($dt1 < $dt);
+    return $self->render(json => {result => 'fail'}) if($dt1 < $dt || !$dt1);
 
     $self->session->{'user'} = {
         id => $id,

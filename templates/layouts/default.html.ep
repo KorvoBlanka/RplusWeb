@@ -423,6 +423,16 @@
         padding: 0 0 !important;
       }
 
+      .timer {
+        color: white;
+        height: 64px;
+        line-height: 20px;
+        font-size: 12pt;
+        top: 10px;
+        position: relative;
+        text-align: center;
+      }
+
     </style>
 
     <%= content_for 'header' %>
@@ -570,6 +580,11 @@
           % } else {
             <li><a href="/info" class="icon-info"></a></li> 
           % }
+            <li style="position: absolute; right: 60px;">
+              <div class="timer hidden">
+                <span class="days"></span> дней <br> <span class="hours"></span> <span class="delimiter">:</span> <span class="minites"></span>
+              </div>
+            </li> 
             <li style="position: absolute; right: 0px;"><a href="#" class="icon-lock closed unlock-screen-opener"></a></li> 
         </ul> 
       </div>
@@ -602,7 +617,7 @@
     <script type="application/javascript">
       var LOCKED = 1;
       var EMAIL = '';
-
+      var all_time = 0;
       moment.locale('ru');
 
       $(document)
@@ -633,6 +648,8 @@
           if (data.result == 'login') {
             LOCKED = 0;
             EMAIL = data.email;
+            all_time = data.exp_time;
+            $('div.timer').removeClass('hidden');
             $('.icon-lock').removeClass('closed');
           }
         })
@@ -879,6 +896,37 @@
         $('.email-screen').removeClass('hidden');
       });
 
+      function Timer(timestamp){
+          if (timestamp < 0) timestamp = 0;
+          var day = Math.floor( (timestamp/60/60) / 24);
+          var hour = Math.floor(timestamp/60/60);
+          var mins = Math.floor((timestamp - hour*60*60)/60);
+          var left_hour = Math.floor( (timestamp - day*24*60*60) / 60 / 60 );
+
+          $('span.days').text(day);
+          if($('span.delimiter').text() == ':')
+            $('span.delimiter').text('\u00A0');
+          else $('span.delimiter').text(':');
+
+          if(String(left_hour).length > 1)
+              $('span.hours').text(left_hour);
+          else
+              $('span.hours').text("0" + left_hour);
+
+          if(String(mins).length > 1)
+              $('span.minites').text(mins);
+          else
+              $('span.minites').text("0" + mins);
+
+      }
+
+      setInterval(function(){
+          all_time = all_time - 1;
+          Timer(all_time);
+          if(all_time <= 0){
+              $('div.timer').addClass('hidden');
+          }
+      }, 1000);
     </script>
 
     <!-- Yandex.Metrika counter -->

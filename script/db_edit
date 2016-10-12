@@ -1,0 +1,9 @@
+#!/usr/bin/perl
+
+use 5.24.0;
+
+use DBM::Deep;
+use Data::Dumper;
+
+my $db = DBM::Deep->new( "../zavrus.deep.db" );
+say Dumper $db;
