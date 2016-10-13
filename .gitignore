@@ -2,3 +2,5 @@ hypnotoad.pid
 zavrus.db
 .gitignore
 log/
+app.conf
+zavrus.deep.db

@@ -9,6 +9,7 @@ use Rplus::Util::Email;
 use Rplus::Util::Config;
 use Data::Dumper;
 use DBM::Deep;
+use DateTime::Format::Strptime;
 
 my $secret_key = "373268624b446f335b4537356434743363594a756b767634573662";
 
@@ -39,7 +40,7 @@ sub prepare {
     foreach (@{$db->{accounts}}){
         if ($_->{email} eq $email){
             $id = $_->{id};
-            $exp_data = $_->{exp_data};
+            $exp_data = DateTime::Format::DateParse->parse_datetime($_->{exp_data});
             last;
         }
     }
@@ -55,7 +56,6 @@ sub prepare {
     #return $self->render(json => {result => 'fail', reason => 'account not found'}) unless $id;
 
     push @{$db->{billing}}, {
-                                id => (scalar @{$db->{billing}} + 1),
                                 id_account => $id,
                                 state => 0,
                                 sum => $sum,
@@ -128,22 +128,23 @@ sub result {
 
     my ($acc_email, $exp_data);
     foreach (@{$db->{accounts}}){
-        if ($_->{id} == $id_acc){
-            $acc_email = $_ -> {email};
-            $exp_data = $_ -> {exp_data};
+        if ($_ -> {id} == $id_acc){
+            $acc_email = $_->{email};
+            $exp_data = DateTime::Format::DateParse->parse_datetime($_->{exp_data});
             last;
         }
     }
     $log->debug("Accounts`s email is $acc_email . Valid up to $exp_data");
 
     if (!$acc_email) {
-        return $self->render(text => 'WMI_RESULT=RETRY&WMI_DESCRIPTION=user not found');
         $log->debug("Not found email!!!");
+        return $self->render(text => 'WMI_RESULT=RETRY&WMI_DESCRIPTION=user not found');
+
     }
 
     foreach (@{$db->{billing}}){
         if ($_->{id} eq $inv_id){
-            $_->{state} == 1;
+            $_->{state} = 1;
             last;
         }
     }
@@ -159,16 +160,18 @@ sub result {
 
     my $dt = DateTime->now(time_zone=>'local');
     my $new_date;
-
+    $log->debug("Now date: $dt;");
     if($dt > $exp_data || !$exp_data){
         $new_date = $dt->add(days => $pay_days);
+
     } else {
         $new_date = $exp_data->add(days => $pay_days);
     }
+    $log->debug("Exp data: $exp_data; new date: $new_date; pays day: $pay_days");
 
     foreach (@{$db->{accounts}}){
         if ($_->{id} == $id_acc){
-            $_ ->{exp_data} = $new_date;
+            $_->{exp_data} = "".$new_date;
             last;
         }
     }
@@ -177,7 +180,8 @@ sub result {
 
     my $subject = 'Оплата доступа';
     my $message = 'Оплата вашего доступа на zavrus.com успешно совершена. Доступ открыт до ' .$new_date;
-    Rplus::Util::Email::send($acc_email, $subject, $message);
+    my $send = Rplus::Util::Email::send($acc_email, $subject, $message);
+    $log->debug("Send: $send;");
     $log->debug(".......................................................................................................");
     return $self->render(text => 'WMI_RESULT=OK');
 }

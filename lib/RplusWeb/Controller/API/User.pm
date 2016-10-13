@@ -99,14 +99,13 @@ sub check_session {
         my $db = DBM::Deep->new( "zavrus.deep.db" );
         my $exp_data;
         foreach (@{$db->{accounts}}){
-          say $_->{exp_data};
             if ($_->{email} eq $self->session->{'user'}->{email}){
-                $exp_data = $_->{exp_data};
+                $exp_data = DateTime::Format::DateParse->parse_datetime($_->{exp_data});
                 last;
             }
         }
-        my $dt = DateTime -> now(time_zone=>'local') -> epoch();
-        my $dt1 = DateTime::Format::DateParse->parse_datetime($exp_data) -> epoch();
+        my $dt = DateTime->now(time_zone=>'local')->epoch();
+        my $dt1 = DateTime::Format::DateParse->parse_datetime($exp_data)->epoch();
         my $dir =  $dt1 - $dt;
         return $self->render(json => {result => 'login', email => $self->session->{'user'}->{email}, exp_time => $dir});
     } else {
@@ -129,7 +128,7 @@ sub unlock {
     foreach (@{$db->{accounts}}){
         if ($_->{email} eq $email){
             $id = $_->{id};
-            $exp_data = $_->{exp_data};
+            $exp_data = DateTime::Format::DateParse->parse_datetime($_->{exp_data});
             last;
         }
     }

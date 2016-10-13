@@ -4,6 +4,10 @@ use 5.24.0;
 
 use DBM::Deep;
 use Data::Dumper;
+use DateTime;
+use DateTime::Format::Strptime;
 
 my $db = DBM::Deep->new( "../zavrus.deep.db" );
-say Dumper $db;
+#$db->{accounts}->[3]->{exp_data} = "2016-10-14T10:42:00";
+#$db->{accounts}->[0]->{exp_data} = "2017-10-13T18:24:14";
+say Dumper $db->{accounts};
