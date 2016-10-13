@@ -4,3 +4,4 @@ zavrus.db
 log/
 app.conf
 zavrus.deep.db
+lib/Rplus/DB.pm
