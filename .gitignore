@@ -1,7 +1,8 @@
 hypnotoad.pid
 zavrus.db
 .gitignore
-log/
+log/*
 app.conf
 zavrus.deep.db
 lib/Rplus/DB.pm
+script/db_edit

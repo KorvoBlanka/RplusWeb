@@ -64,8 +64,8 @@ sub prepare {
     my $inv_id = $prefix_number.(scalar @{$db->{billing}});
     $log->debug("New billing number is $inv_id");
 
-    my $success_url = "http://dev.zavrus.com/api/walletone/success?InvId=$inv_id&OutSum=$sum";
-    my $fail_url = "http://dev.zavrus.com/api/walletone/fail?InvId=$inv_id";
+    my $success_url = "http://zavrus.com/api/walletone/success?InvId=$inv_id&OutSum=$sum";
+    my $fail_url = "http://zavrus.com/api/walletone/fail?InvId=$inv_id";
 
     my %fields;
 

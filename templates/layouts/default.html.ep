@@ -465,7 +465,7 @@
           <div class="form-group">
             <input type="email" class="form-control" id="InputEmail_u" placeholder="введите ваш e-mail" style="opacity: 0.8;">
           </div>
-          <span class="screen-message pull-left text-danger hidden" style="position: absolute; left: 15px; top: 215px;"></span>
+          <span class="screen-message pull-left text-danger hidden" style="position: absolute; left: 15px; top: 100px;"></span>
           <button class="btn btn-default pull-right">Войти</button>
         </form>
       </div>

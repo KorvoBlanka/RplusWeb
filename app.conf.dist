@@ -9,7 +9,7 @@
         month_pay => {sum => 1500.00, days => '30'},
     },
 
-    prefix_payment_number => 'test',
+    prefix_payment_number => 'production',
 
     storage => {
         path => '/mnt/data/storage/makler',
@@ -24,7 +24,7 @@
     analytics_code => q{<!-- Yandex.Metrika counter --><script type="text/javascript">(function (d, w, c) { (w[c] = w[c] || []).push(function() { try { w.yaCounter22624288 = new Ya.Metrika({id:22624288, webvisor:true, clickmap:true, trackLinks:true, accurateTrackBounce:true}); } catch(e) { } }); var n = d.getElementsByTagName("script")[0], s = d.createElement("script"), f = function () { n.parentNode.insertBefore(s, n); }; s.type = "text/javascript"; s.async = true; s.src = (d.location.protocol == "https:" ? "https:" : "http:") + "//mc.yandex.ru/metrika/watch.js"; if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); } })(document, window, "yandex_metrika_callbacks");</script><noscript><div><img src="//mc.yandex.ru/watch/22624288" style="position:absolute; left:-9999px;" alt="" /></div></noscript><!-- /Yandex.Metrika counter -->},
 
     hypnotoad => {
-        listen => ['http://:19201'],
+        listen => ['http://:19202'],
         proxy => 1,
         pid_file => 'hypnotoad.pid',
     }
