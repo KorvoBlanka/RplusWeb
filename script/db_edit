@@ -9,9 +9,9 @@ use DateTime::Format::Strptime;
 
 my $db = DBM::Deep->new( "../zavrus.deep.db" );
 
-$db->{accounts}->[1]->{email} = "anutka777.1990\@mail.ru";
-$db->{accounts}->[1]->{exp_data} = "2016-10-20T00:00:00";
-$db->{accounts}->[2]->{email} = "bodya0519\@mail.ru";
-$db->{accounts}->[2]->{exp_data} = "2016-10-20T00:00:00";
+#$db->{accounts}->[1]->{email} = "anutka777.1990\@mail.ru";
+#$db->{accounts}->[1]->{exp_data} = "2016-10-20T00:00:00";
+#$db->{accounts}->[2]->{email} = "bodya0519\@mail.ru";
+#$db->{accounts}->[2]->{exp_data} = "2016-10-20T00:00:00";
 
-say Dumper $db->{accounts};
+say Dumper $db->{billing};

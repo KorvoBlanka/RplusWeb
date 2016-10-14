@@ -461,10 +461,10 @@ $(function () {
           }
 
           if (i % item_count == 0) {
-            xhtml += '<hr style="width: 100%; margin-bottom: 5px;" class="featurette-divider">';
+            xhtml += '<hr style="width: 100%; margin-bottom: 5px; clear: left;" class="featurette-divider">';
           }
 
-          xhtml += '<div class="col-md-3 col-xs-6 col-ssm-12" style="padding: 6px;">';
+          xhtml += '<div class="col-md-3 col-xs-6 col-ssm-12" style="padding: 6px; ">';
           xhtml += '<a href="/show/' + r.id + '" style="text-decoration: none;">';
           xhtml += '  <div class="panel panel-default panel-sm highlight realty-tile" data-id="' + r.id + '"">';
           xhtml += '    <div class="panel-overlay"></div>';
