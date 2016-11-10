@@ -42,6 +42,7 @@ sub startup {
         $r->get('/show/:realty_id')->to(template => 'realty/show');
         $r->get('/info')->to(template => 'aux/info');
         $r->get('/billing')->to(template => 'aux/billing');
+        $r->get('/service/statistic')->to(template => 'service/statistic');
     }
 
 

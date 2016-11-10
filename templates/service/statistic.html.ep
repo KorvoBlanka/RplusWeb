@@ -1,0 +1,50 @@
+% layout 'default';
+% use Rplus::Model::MediaImportStatistic::Manager;
+% use Rplus::Model::MediaImportError::Manager;
+% use Rplus::Model::RealtyType::Manager;
+% use DBM::Deep;
+% my $db = DBM::Deep->new( "zavrus.deep.db" );
+<head>
+  <style type="text/css">
+    td {
+      font-size: 14pt;
+      border: 1px solid #777777;
+    }
+    table{
+        margin: 10px 5px 0;
+    }
+
+    </style>
+</head>
+<div>
+    <table>
+        <thead style="background: #062141; color: #ffffff;", align='center', height="50">
+            <tr >
+                <td width="100px">№</td>
+                <td width="200px">Дата/время</td>
+                <td width="150">Тип аренды</td>
+                <td width="200">Тип недвижимости</td>
+                <td width="350">Район</td>
+                <td width="100">Комнат</td>
+                <td width="125">Цена</td>
+                <td style="width: calc(100vw - 1130px);">Поиск</td>
+            </tr>
+        </thead>
+        <tbody align='center'>
+            % my $i=scalar @{$db->{queres}};
+            % foreach (reverse @{$db->{queres}}){
+            <tr>
+            %  my @y = @{Rplus::Model::RealtyType::Manager->get_objects(select => 'name', query => [code => $_->{type_code}])};
+                <td><%= $i %></td>
+                <td><%= $_->{date} %></td>
+                <td><%= $_->{offer_type} %></td>
+                <td><%= $y[0]->{name} %></td>
+                <td><%= $_->{district} %></td>
+                <td><%= $_->{rooms_count} %></td>
+                <td><%= $_->{price} %></td>
+                <td><%= $_->{query} %></td>
+            </tr>
+            % $i--;}
+        </tbody>
+    </table>
+</div>

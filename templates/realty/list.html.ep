@@ -390,7 +390,7 @@ $(function () {
   function listRealty(page) {
     var $this = $(this);
     //var offer_type_code = $('[name="offer_type"]:input').val(),
-    var offer_type_code = 'rent',
+    var offer_type_code = $('[name="offer_type"]:input').val(),
         type_code     = $('[name="type_code"]:input').val(),
         district = $('[name="district"]:input').val(),
         rooms_count = $('[name="rooms_count"]:input').val(),
@@ -398,7 +398,6 @@ $(function () {
         price_high  = $("#slider-range" ).slider("values", 1),
         q           = $('[name="q"]:input').val()
     ;
-
     var sort_by = $('.js-order.current').attr('rel');
 
     var per_page = 20;
@@ -791,8 +790,8 @@ $(function () {
       <div class="form-group">
         <div class="styled-select transparent">
           <select class="form-control input-sm" name="offer_type">
-            <option value="rent_short">Долгосрочная аренда</option>
-            <option value="rent_long">Краткосрочная аренда</option>
+            <option value="long">Долгосрочная аренда</option>
+            <option value="short">Краткосрочная аренда</option>
           </select>
         </div>
       </div>

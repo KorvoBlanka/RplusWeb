@@ -12,6 +12,9 @@ use Rplus::Util::Query;
 
 use Data::Dumper;
 use JSON;
+
+use DBM::Deep;
+
 sub _generate_code {
     srand(time);
     my $sz = shift;
@@ -53,7 +56,8 @@ sub list {
 
     my @query = (
         state_code => 'work',
-        offer_type_code => $offer_type_code,
+        offer_type_code => "rent",
+        ($offer_type_code ? (rent_type => $offer_type_code) : ()),
         account_id => 4,
         ($type_code ? (type_code => $type_code) : ()),
         ($district ? (district => $district) : ()),
@@ -61,6 +65,20 @@ sub list {
         ($price_low && $price_high ? (or => [price => {ge_le => [$price_low, $price_high]}, price =>undef]) : ($price_low ? (or => [price => {ge => $price_low}, price =>undef]) : ($price_high ? (or => [price => {le => $price_high}, price =>undef]) : ()))),
         Rplus::Util::Query->parse($q, $self),
     );
+
+    my $db = DBM::Deep->new("zavrus.deep.db" );
+
+    if($offer_type_code eq 'short' || $type_code || $district || $rooms_count || $q || $price_low){
+        push @{$db->{queres}}, {
+            date => ''.DateTime->now(time_zone=>'local'),
+            offer_type => $offer_type_code ? $offer_type_code : ' ',
+            type_code => $type_code ?  $type_code : ' ',
+            district => $district ?  $district : ' ',
+            rooms_count => $rooms_count ? $rooms_count : ' ',
+            price => "от ".($price_low ? $price_low : '0')." до ".($price_high ? $price_high : '-'),
+            query => $q ? $q : '0',
+        };
+    }
 
     my $res = {
         list => [],
