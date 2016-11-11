@@ -1,16 +1,69 @@
-% layout 'default';
 % use Rplus::Model::MediaImportStatistic::Manager;
 % use Rplus::Model::MediaImportError::Manager;
 % use Rplus::Model::RealtyType::Manager;
 % use DBM::Deep;
+% use Data::Dumper;
+%  use Time::Piece;
 % my $db = DBM::Deep->new( "zavrus.deep.db" );
+% my @data=();
+% my @dataSort=();
+% my $days =$self->param('days') ? $self->param('days') : 0;
+% my $sort;
+% say $self->param('IPsort');
+%    if(defined $self->param('IPsort')){$sort = $self->param('IPsort'); } else {$sort=-1;}
+%
+% say $sort;
+% my $parser = DateTime::Format::Strptime->new( pattern => "%Y-%m-%dT%H:%M:%S");
+% if($days > 0){ my $i=0;
+%    foreach (@{$db->{queres}}){
+%         my $t = $parser->parse_datetime("$_->{date}");
+%         my $t1 = DateTime->now(time_zone=>'local');
+%         if($t1->subtract_datetime($t)->days < $days){
+%               push @data, $_;
+%         }
+%   }
+% } else { @data = @{$db->{queres}};}
+% if($sort==0){
+%    @dataSort=sort {$a->{ip} cmp $b->{ip}} @data;
+%}
+%if($sort==1){
+%    @dataSort= reverse sort {$a->{ip} cmp $b->{ip}} @data;
+%}
+%if($sort==-1){
+%    @dataSort= reverse sort {$a->{date} cmp $b->{date}} @data;
+%}
+
+
 <head>
   <style type="text/css">
+  .ip{
+      display: none;
+  }
+    select {
+      position: absolute;
+      top: 12px;
+      z-index: 1000;
+      left: 550px;
+      height: 40px;
+      width: 150px;
+    }
+    input{
+        position: absolute;
+        z-index: 1000;
+        top: 12px;
+        left: 710px;
+        width: 40px;
+        height: 40px;
+        border-radius: 40px;
+        background-color: white;
+    }
     td {
       font-size: 14pt;
       border: 1px solid rgba(119, 119, 119, 0.17);
     }
     table{
+        position: relative;
+        top:50px;
         margin: 10px 5px 0;
     }
 
@@ -19,14 +72,61 @@
     }
 
     </style>
+    <script>
+        var sortIP = <%= $sort %>;
+        window.onload = function () {
+            document.getElementsByClassName('Ip').item(0).value=sortIP;
+            var arr=document.getElementsByTagName("select").item(0).options;
+            for(var i=0; i<arr.length;i++){
+                if(arr.item(i).value == <%= $days %>){
+                    arr.item(i).selected=true;
+                    document.getElementsByTagName("select").selectedIndex=i;
+                }
+            }
+        }
+        function set(){
+            sortIP=-1;
+            SORT();
+
+        }
+        function setSortIP() {
+            if(sortIP==-1){
+                sortIP=0;
+            }else if(sortIP==0){
+                sortIP=1;
+            }else sortIP=0;
+            SORT();
+
+        }
+        function SORT(){
+            document.getElementsByClassName('Ip').item(0).value=sortIP;
+            document.forms.item(0).submit();
+%
+    }
+
+    </script>
 </head>
 <div>
+    <form  action="statistic" method="get">
+        <select name="days">
+                <option value="0">За все время</option>
+                <option value="1">За 1 день</option>
+                <option value="2">За 2 дня</option>
+                <option value="3">За 3 дня</option>
+                <option value="7">За неделю</option>
+                <option value="14">За 2 недели</option>
+                <option value="30">За месяц</option>
+                <option value="91">За 3 месяца</option>
+        </select>
+        <input class = "Ip" name="IPsort" type="number">
+        <input type="submit" value="GO">
+    </form>
     <table>
         <thead style="background: #062141; color: #ffffff;", align='center', height="50">
             <tr >
                 <td width="60px">№</td>
-                <td width="150px">IP-адрес</td>
-                <td width="200px">Дата/время</td>
+                <td width="150px" onclick="setSortIP()">IP-адрес</td>
+                <td width="200px" onclick="set()">Дата/время</td>
                 <td width="75px">Тип <br>аренды</td>
                 <td width="200">Тип недвижимости</td>
                 <td width="350">Район</td>
@@ -36,8 +136,8 @@
             </tr>
         </thead>
         <tbody align='center'>
-            % my $i=scalar @{$db->{queres}};
-            % foreach (reverse @{$db->{queres}}){
+            % my $i=scalar @dataSort;
+            % foreach ( @dataSort){
             <tr>
             %  my @y = @{Rplus::Model::RealtyType::Manager->get_objects(select => 'name', query => [code => $_->{type_code}])};
                 <td><%= $i %></td>
