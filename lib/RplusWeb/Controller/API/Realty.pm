@@ -53,7 +53,6 @@ sub list {
     my $sort_by = $self->param('sort_by');
     my $sort_by_q = 'change_date DESC';
     $sort_by_q = 'price ASC' if ($sort_by eq 'price');
-
     my @query = (
         state_code => 'work',
         offer_type_code => "rent",
@@ -68,15 +67,16 @@ sub list {
 
     my $db = DBM::Deep->new("zavrus.deep.db" );
 
-    if($offer_type_code eq 'short' || $type_code || $district || $rooms_count || $q || $price_low){
+    if(($offer_type_code eq 'short' || $type_code || $district || $rooms_count || $q || $price_low)&& $page==1){
         push @{$db->{queres}}, {
+            ip => $self->{tx}->{original_remote_address},
             date => ''.DateTime->now(time_zone=>'local'),
             offer_type => $offer_type_code ? $offer_type_code : ' ',
             type_code => $type_code ?  $type_code : ' ',
             district => $district ?  $district : ' ',
             rooms_count => $rooms_count ? $rooms_count : ' ',
             price => "от ".($price_low ? $price_low : '0')." до ".($price_high ? $price_high : '-'),
-            query => $q ? $q : '0',
+            query => $q ? $q : ' ',
         };
     }
 

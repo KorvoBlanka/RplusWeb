@@ -20,14 +20,15 @@
     <table>
         <thead style="background: #062141; color: #ffffff;", align='center', height="50">
             <tr >
-                <td width="100px">№</td>
+                <td width="60px">№</td>
+                <td width="150px">IP-адрес</td>
                 <td width="200px">Дата/время</td>
-                <td width="150">Тип аренды</td>
+                <td width="75px">Тип <br>аренды</td>
                 <td width="200">Тип недвижимости</td>
                 <td width="350">Район</td>
-                <td width="100">Комнат</td>
-                <td width="125">Цена</td>
-                <td style="width: calc(100vw - 1130px);">Поиск</td>
+                <td width="70px">Комнат</td>
+                <td width="115px">Цена</td>
+                <td style="width: calc(100vw - 1220px);">Поиск</td>
             </tr>
         </thead>
         <tbody align='center'>
@@ -36,6 +37,7 @@
             <tr>
             %  my @y = @{Rplus::Model::RealtyType::Manager->get_objects(select => 'name', query => [code => $_->{type_code}])};
                 <td><%= $i %></td>
+                <td><%= $_->{ip} %></td>
                 <td><%= $_->{date} %></td>
                 <td><%= $_->{offer_type} %></td>
                 <td><%= $y[0]->{name} %></td>
