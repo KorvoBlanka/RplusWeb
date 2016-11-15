@@ -9,10 +9,8 @@
 % my @dataSort=();
 % my $days =$self->param('days') ? $self->param('days') : 0;
 % my $sort;
-% say $self->param('IPsort');
-%    if(defined $self->param('IPsort')){$sort = $self->param('IPsort'); } else {$sort=-1;}
+% if(defined $self->param('IPsort')){$sort = $self->param('IPsort'); } else {$sort=-1;}
 %
-% say $sort;
 % my $parser = DateTime::Format::Strptime->new( pattern => "%Y-%m-%dT%H:%M:%S");
 % if($days > 0){ my $i=0;
 %    foreach (@{$db->{queres}}){
@@ -60,6 +58,8 @@
     td {
       font-size: 14pt;
       border: 1px solid rgba(119, 119, 119, 0.17);
+      border-top: 0;
+      border-right: 0;
     }
     table{
         position: relative;
@@ -132,7 +132,8 @@
                 <td width="350">Район</td>
                 <td width="70px">Комнат</td>
                 <td width="115px">Цена</td>
-                <td style="width: calc(100vw - 1220px);">Поиск</td>
+                <td width="100px">Результатов</td>
+                <td style="width: calc(100vw - 1320px);">Поиск</td>
             </tr>
         </thead>
         <tbody align='center'>
@@ -148,6 +149,7 @@
                 <td><%= $_->{district} %></td>
                 <td><%= $_->{rooms_count} %></td>
                 <td><%= $_->{price} %></td>
+                <td><%= $_->{rezult} %></td>
                 <td><%= $_->{query} %></td>
             </tr>
             % $i--;}

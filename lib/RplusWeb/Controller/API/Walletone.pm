@@ -25,7 +25,7 @@ sub _generate_code {
 
 sub prepare {
     my $self = shift;
-    my $email = $self->param('email');
+    my $email = lc $self->param('email');
     my $type_pay = $self->param('payment');
     my $log = Mojo::Log->new(path => 'log/WalletonePrepare.log', level => 'debug');
     my $config = Rplus::Util::Config::get_config();
@@ -38,7 +38,7 @@ sub prepare {
     my $id;
     my $exp_data;
     foreach (@{$db->{accounts}}){
-        if ($_->{email} eq $email){
+        if (lc $_->{email} eq $email){
             $id = $_->{id};
             $exp_data = DateTime::Format::DateParse->parse_datetime($_->{exp_data});
             last;
@@ -129,7 +129,7 @@ sub result {
     my ($acc_email, $exp_data);
     foreach (@{$db->{accounts}}){
         if ($_ -> {id} == $id_acc){
-            $acc_email = $_->{email};
+            $acc_email = lc $_->{email};
             $exp_data = DateTime::Format::DateParse->parse_datetime($_->{exp_data});
             last;
         }
@@ -141,47 +141,55 @@ sub result {
         return $self->render(text => 'WMI_RESULT=RETRY&WMI_DESCRIPTION=user not found');
 
     }
-
+    my $flag=0;
     foreach (@{$db->{billing}}){
         if ($_->{id} eq $inv_id){
-            $_->{state} = 1;
+            if($_->{state}!=1){
+                $_->{state} = 1;
+            }
+            else {
+                $flag=1;
+            }
             last;
         }
     }
-
-    my $pay_days;
-    while ( my ($type, $value) = each(%{$config_pay}) ) {
-        if($value -> {sum} == $sum){
-            $pay_days = $value -> {days};
+    if(!$flag){
+        my $pay_days;
+        while ( my ($type, $value) = each(%{$config_pay}) ) {
+            if($value -> {sum} == $sum){
+                $pay_days = $value -> {days};
+            }
         }
-    }
 
-    $log->debug("Paid for $pay_days days");
+        $log->debug("Paid for $pay_days days");
 
-    my $dt = DateTime->now(time_zone=>'local');
-    my $new_date;
-    $log->debug("Now date: $dt;");
-    if($dt > $exp_data || !$exp_data){
-        $new_date = $dt->add(days => $pay_days);
+        my $dt = DateTime->now(time_zone=>'local');
+        my $new_date;
+        $log->debug("Now date: $dt;");
+        if($dt > $exp_data || !$exp_data){
+            $new_date = $dt->add(days => $pay_days);
 
-    } else {
-        $new_date = $exp_data->add(days => $pay_days);
-    }
-    $log->debug("Exp data: $exp_data; new date: $new_date; pays day: $pay_days");
-
-    foreach (@{$db->{accounts}}){
-        if ($_->{id} == $id_acc){
-            $_->{exp_data} = "".$new_date;
-            last;
+        } else {
+            $new_date = $exp_data->add(days => $pay_days);
         }
-    }
-    $log->debug("Access to $new_date");
-    #$log->debug("code at one day = '$genercode'");
+        $log->debug("Exp data: $exp_data; new date: $new_date; pays day: $pay_days");
 
-    my $subject = 'Оплата доступа';
-    my $message = 'Оплата вашего доступа на zavrus.com успешно совершена. Доступ открыт до ' .$new_date;
-    my $send = Rplus::Util::Email::send($acc_email, $subject, $message);
-    $log->debug("Send: $send;");
+        foreach (@{$db->{accounts}}){
+            if ($_->{id} == $id_acc){
+                $_->{exp_data} = "".$new_date;
+                last;
+            }
+        }
+        $log->debug("Access to $new_date");
+        #$log->debug("code at one day = '$genercode'");
+
+        my $subject = 'Оплата доступа';
+        my $message = 'Оплата вашего доступа на zavrus.com успешно совершена. Доступ открыт до ' .$new_date;
+        my $send = Rplus::Util::Email::send($acc_email, $subject, $message);
+        $log->debug("Send: $send;");
+    } else{
+        $log->debug("This billing was already paid");
+    }
     $log->debug(".......................................................................................................");
     return $self->render(text => 'WMI_RESULT=OK');
 }
@@ -217,7 +225,7 @@ sub success {
     foreach (@{$db->{accounts}}){
         if ($_->{id} == $id_acc){
             $aid = $id_acc;
-            $email = $_->{email};
+            $email = lc $_->{email};
             last;
         }
     }

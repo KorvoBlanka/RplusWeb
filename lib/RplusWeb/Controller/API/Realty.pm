@@ -67,9 +67,14 @@ sub list {
 
     my $db = DBM::Deep->new("zavrus.deep.db" );
 
+    my $res = {
+        list => [],
+        count => Rplus::Model::Realty::Manager->get_objects_count(query => [@query], require_objects => ['type']),
+    };
+
     if(($offer_type_code eq 'short' || $type_code || $district || $rooms_count || $q || $price_low)&& $page==1){
         push @{$db->{queres}}, {
-            ip => $self->{tx}->{original_remote_address},
+            ip => $self->{tx}->{req}->{content}->{headers}->{headers}->{"x-real-ip"}->[0],
             date => ''.DateTime->now(time_zone=>'local'),
             offer_type => $offer_type_code ? $offer_type_code : ' ',
             type_code => $type_code ?  $type_code : ' ',
@@ -77,13 +82,9 @@ sub list {
             rooms_count => $rooms_count ? $rooms_count : ' ',
             price => "от ".($price_low ? $price_low : '0')." до ".($price_high ? $price_high : '-'),
             query => $q ? $q : ' ',
+            rezult => $res->{count} ? $res->{count} : '0',
         };
     }
-
-    my $res = {
-        list => [],
-        count => Rplus::Model::Realty::Manager->get_objects_count(query => [@query], require_objects => ['type']),
-    };
 
     # Небольшой костыль: если ничего не найдено, удалим FTS данные
     if (!$res->{count}) {

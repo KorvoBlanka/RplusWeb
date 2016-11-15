@@ -99,7 +99,7 @@ sub check_session {
         my $db = DBM::Deep->new( "zavrus.deep.db" );
         my $exp_data;
         foreach (@{$db->{accounts}}){
-            if ($_->{email} eq $self->session->{'user'}->{email}){
+            if (lc $_->{email} eq lc $self->session->{'user'}->{email}){
                 $exp_data = DateTime::Format::DateParse->parse_datetime($_->{exp_data});
                 last;
             }
@@ -126,7 +126,7 @@ sub unlock {
     my $id;
     my $exp_data;
     foreach (@{$db->{accounts}}){
-        if ($_->{email} eq $email){
+        if (lc $_->{email} eq lc $email){
             $id = $_->{id};
             $exp_data = DateTime::Format::DateParse->parse_datetime($_->{exp_data});
             last;
