@@ -236,9 +236,11 @@
   }
 
   .panel-body > .sticker-block {
+    height: 210px;
     width: 100%;
     position: relative;
     background-color: rgba(0,0,0,0.05);
+    overflow: hidden;
   }
 
   .sticker-block > .price-sticker {
@@ -470,7 +472,7 @@ $(function () {
           xhtml += '    <div class="panel-body">';
           xhtml += '      <div class="sticker-block">';
           if (r.main_photo_thumbnail) {
-            xhtml += '      <img class="media-object" src=' + r.main_photo_thumbnail + ' style="height: 210px; max-width: 100%;">';
+            xhtml += '      <img class="media-object" src=' + r.main_photo_thumbnail + ' style="height: 230px; max-width: 100%;">';
           } else {
             xhtml += '      <div class="" style="height: 210px;"></div>';
           }

@@ -509,7 +509,7 @@
       <div id="carousel">
       % my $photo_iter = Rplus::Model::Photo::Manager->get_objects_iterator(query => [realty_id => $id, delete_date => undef], sort_by => 'is_main DESC, id ASC');
       % while (my $photo = $photo_iter->next) {
-        <img class="carousel-img" src="<%= $photo->{filename} %>" style="height: 420px; float: left;">
+        <img class="carousel-img" src="<%= $photo->{filename} %>" style="height: 470px; float: left;">
       % }
       </div>
       <a class="slide-prev photo-slide-prev icon-left" href="#" style="display: block;"></a>
