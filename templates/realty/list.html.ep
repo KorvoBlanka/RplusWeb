@@ -472,7 +472,12 @@ $(function () {
           xhtml += '    <div class="panel-body">';
           xhtml += '      <div class="sticker-block">';
           if (r.main_photo_thumbnail) {
-            xhtml += '      <img class="media-object" src=' + r.main_photo_thumbnail + ' style="height: 230px; max-width: 100%;">';
+             if(/http/.test(r.main_photo_thumbnail)){
+                    xhtml += '      <img class="media-object" src=' + r.main_photo_thumbnail + ' style="height: 230px; max-width: 100%;">';
+             } else {
+                    xhtml += '      <img class="media-object" src=http://khv.rplusmgmt.com/storage_ln/photos/' + r.main_photo_thumbnail + ' style="height: 230px; max-width: 100%;">';
+             }
+
           } else {
             xhtml += '      <div class="" style="height: 210px;"></div>';
           }
